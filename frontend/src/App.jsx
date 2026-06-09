@@ -5,7 +5,7 @@ const API_BASE = "http://localhost:5000";
 const EXAMPLES = [
   {
     label: "Reuters (Real)",
-    text: "The Federal Reserve raised interest rates by a quarter percentage point on Wednesday and signaled it was on track to deliver more increases this year, as policymakers balanced the need to fight inflation against risks to financial stability following the recent collapse of two U.S. regional banks. The U.S. central bank's policy-setting Federal Open Market Committee voted unanimously to lift the target federal funds rate to a range of 4.75% to 5%, the highest since 2007.",
+    text: "Data centres are expected to consume twice as much power and water by 2030 as they expand to meet the surge in demand from artificial intelligence, U.N. researchers said on Wednesday. Unless governments heed the rising environmental costs of AI, the rapid rollout could also strain scarce land resources and create mountains of electronic waste, the United Nations University Institute for Water, Environment and Health warned in a report.",
   },
   {
     label: "Fabricated (Fake)",
