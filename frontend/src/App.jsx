@@ -9,7 +9,7 @@ const EXAMPLES = [
   },
   {
     label: "Fabricated (Fake)",
-    text: "SHOCKING: Doctors have been hiding the truth about vaccines for years. A new underground study from rogue scientists reveals that the COVID-19 vaccine permanently alters your DNA and causes 5G signals to be received by the human brain. The government has suppressed this information and is paying media outlets to keep it quiet. Thousands of whistleblowers have come forward but are being silenced. Share this before it gets deleted.",
+    text: "A study conducted by the Centers for Disease Control and Prevention (CDC) found that an “overwhelming majority” of individuals who contracted coronavirus had worn a mask or face covering, proving that neither are effective at preventing the spread of COVID-19.",
   },
 ];
 

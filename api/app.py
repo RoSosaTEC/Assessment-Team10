@@ -205,7 +205,7 @@ def predict_and_respond(text, model, vectorizer, mode, labels, include_suggestio
         suggestions = get_suggestions(tfidf, top_words)
         # Framing depends on verdict
         if verdict == "FAKE":
-            framing = "You may want to read these verified real articles on the same topic:"
+            framing = "You may want to read these verified real articles on a similar topic:"
         else:
             framing = "More on this topic:"
         response["suggestions"] = {
