@@ -69,15 +69,15 @@ raw_combined = pd.concat([fake_raw, true_raw], ignore_index=True)
 
 # Merge titles back into cleaned data by matching on text snippet
 # (first 100 chars of text is a reliable enough join key)
-raw_combined["text_key"] = raw_combined["text"].str.strip().str[:100]
-isot_clean["text_key"]   = isot_clean["content"].str.strip().str[:100]
+raw_combined["text_key"] = raw_combined["text"].str.strip().str[:200]
+isot_clean["text_key"]   = isot_clean["content"].str.strip().str[:200]
 isot_with_titles = isot_clean.merge(
     raw_combined[["text_key", "title"]], on="text_key", how="left"
 )
 
-# Fill any unmatched titles with first sentence of content
+# Fill any unmatched titles with first 100 chars of content
 isot_with_titles["title"] = isot_with_titles["title"].fillna(
-    isot_with_titles["content"].str.split(".").str[0].str.strip()
+    isot_with_titles["content"].str[:100].str.strip()
 )
 
 # Keep only REAL articles as suggestion candidates

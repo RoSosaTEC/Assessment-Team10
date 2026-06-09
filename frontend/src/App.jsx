@@ -363,7 +363,7 @@ function Styles() {
       .suggestion-card-inner { display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; }
       .suggestion-index { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); flex-shrink: 0; padding-top: 2px; min-width: 22px; }
       .suggestion-body { flex: 1; min-width: 0; }
-      .suggestion-title { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 5px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .suggestion-title { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 5px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       .suggestion-snippet { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       .suggestion-meta { display: flex; gap: 14px; }
       .suggestion-overlap, .suggestion-sim { font-size: 0.74rem; font-family: var(--font-mono); color: var(--text-muted); }
