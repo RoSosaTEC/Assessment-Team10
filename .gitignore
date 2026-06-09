@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pkl
+*.pyc
+data/raw/
+data/processed/
+api/predictions.db
+frontend/node_modules/
+frontend/dist/
+.env
+*.Identifier
