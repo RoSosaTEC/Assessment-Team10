@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://claude.ai/chat/412208eb-bc05-4873-8b59-7603d4c05dc7
+HostUrl=https://claude.ai/api/organizations/26996de1-28cb-461c-8e7f-c22db5fd2d35/conversations/412208eb-bc05-4873-8b59-7603d4c05dc7/wiggle/download-file?path=%2Fmnt%2Fuser-data%2Foutputs%2Ftrain_isot.py
