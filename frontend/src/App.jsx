@@ -267,34 +267,127 @@ function ResultCard({ result, t }) {
   );
 }
 
-function SuggestionsSection({ suggestions, t, onArticleClick }) {
+function AnalysisDashboard({ result }) {
+  if (!result?.analysis) return null;
+
+  const { sentiment, readability, stats } = result.analysis;
+
   return (
-    <div className="sugg-wrap" role="complementary" aria-label={t.suggTitle}>
-      <div className="sugg-head">
-        <div className="sugg-head-icon"><i className="ti ti-search" aria-hidden="true" /></div>
+    <div
+      style={{
+        background: "white",
+        border: "2px solid var(--acc-border)",
+        borderRadius: "16px",
+        padding: "20px",
+        marginBottom: "16px"
+      }}
+    >
+      <h2>Research Dashboard</h2>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2,1fr)",
+          gap: "12px",
+          marginTop: "12px"
+        }}
+      >
         <div>
-          <div className="sugg-head-title">{t.suggTitle}</div>
-          <div className="sugg-head-sub">{suggestions.framing}</div>
+          <strong>Reading Level</strong>
+          <p>{readability.grade_level}</p>
+        </div>
+
+        <div>
+          <strong>Reading Ease</strong>
+          <p>{readability.reading_ease}</p>
+        </div>
+
+        <div>
+          <strong>Sentiment</strong>
+          <p>{sentiment.polarity_label}</p>
+        </div>
+
+        <div>
+          <strong>Subjectivity</strong>
+          <p>{sentiment.subjectivity_label}</p>
+        </div>
+
+        <div>
+          <strong>Words</strong>
+          <p>{stats.word_count}</p>
+        </div>
+
+        <div>
+          <strong>Sentences</strong>
+          <p>{stats.sentence_count}</p>
         </div>
       </div>
-      <div>
-        {suggestions.articles.length === 0
-          ? <p className="empty">{t.noSuggestions}</p>
-          : suggestions.articles.map((article, i) => (
-            <button key={i} className="sugg-item" onClick={() => onArticleClick(article)} aria-label={article.title}>
-              <span className="sugg-num" aria-hidden="true">#{i + 1}</span>
-              <div className="sugg-body">
-                <div className="sugg-title">{article.title}</div>
-                <div className="sugg-snip">{article.snippet.slice(0, 120)}…</div>
-                <div className="sugg-tags">
-                  <span className="sugg-tag"><i className="ti ti-key" aria-hidden="true" />{article.overlap} {article.overlap === 1 ? t.keyword : t.keywordsInCommon}</span>
-                  <span className="sugg-tag"><i className="ti ti-adjustments-horizontal" aria-hidden="true" />{Math.round(article.similarity * 100)}% {t.similar}</span>
-                </div>
-              </div>
-              <i className="ti ti-arrow-right sugg-arr" aria-hidden="true" />
-            </button>
-          ))}
+
+      <h3 style={{ marginTop: "20px" }}>
+        Top Influencing Words
+      </h3>
+
+      <div className="kw-row">
+        {result.top_words?.map(word => (
+          <KeywordPill
+            key={word.word}
+            word={word.word}
+            score={word.score}
+          />
+        ))}
       </div>
+    </div>
+  );
+}
+
+function RelatedArticlesSection({ related }) {
+  if (!related) return null;
+
+  return (
+    <div
+      style={{
+        background: "white",
+        border: "2px solid var(--acc-border)",
+        borderRadius: "16px",
+        padding: "20px"
+      }}
+    >
+      <h2>Related Sources</h2>
+
+      <p>{related.framing}</p>
+
+      {related.articles.map((article, index) => (
+        <div
+          key={index}
+          style={{
+            marginTop: "20px",
+            paddingTop: "20px",
+            borderTop: "1px solid #ddd"
+          }}
+        >
+          <h3>{article.title}</h3>
+
+          <p>
+            <strong>APA Citation</strong>
+          </p>
+
+          <p>{article.citation}</p>
+
+          <p>
+            <strong>Why it's related</strong>
+          </p>
+
+          <p>{article.excerpt}</p>
+
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Read article
+          </a>
+        </div>
+      ))}
     </div>
   );
 }
@@ -338,6 +431,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [inputMode, setInputMode] = useState("text"); 
 
   const [lang, setLangState] = useState("en");
   const [cbMode, setCbModeState] = useState("none");
@@ -401,7 +495,10 @@ export default function App() {
   }, []);
 
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
-  const canSubmit = text.trim() && wordCount >= 10;
+  const canSubmit =
+  inputMode === "url"
+    ? text.trim().length > 0
+    : text.trim() && wordCount >= 10;
 
   const statusText = loading ? t.analyzing
     : error ? t.errorTitle
@@ -417,13 +514,29 @@ export default function App() {
     setSelectedArticle(null);
     stopTTS();
     try {
-      const res = await fetch(`${API_BASE}/predict/article`, {
+      const endpoint =
+        inputMode === "url"
+          ? "/predict/url"
+          : "/predict/article";
+
+        const payload =
+          inputMode === "url"
+            ? { url: text }
+            : { text };
+        
+        const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        headers: { "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Server error.");
+
+      if (!res.ok) {
+        throw new Error(data.error || "Server error");
+      }
+
       setResult(data);
     } catch (err) {
       setError(err.message);
@@ -505,13 +618,41 @@ export default function App() {
         <section className="col-left" aria-label={t.textareaLabel}>
           <div className="input-card">
             <label htmlFor="main-input" className="sr-only">{t.textareaLabel}</label>
+            <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              padding: "16px",
+              borderBottom: "1px solid var(--acc-border)"
+            }}
+          >
+            <button
+              type="button"
+              className="ex-btn"
+              onClick={() => setInputMode("text")}
+            >
+              Paste Text
+            </button>
+
+            <button
+              type="button"
+              className="ex-btn"
+              onClick={() => setInputMode("url")}
+            >
+              URL
+            </button>
+          </div>
             <textarea
               id="main-input"
               ref={textareaRef}
               className="textarea"
               value={text}
               onChange={e => setText(e.target.value)}
-              placeholder={lang === "es" ? "Pega un artículo de noticias aquí…" : "Paste a news article here…"}
+              placeholder={
+                inputMode === "url"
+                  ? "Paste article URL..."
+                  : "Paste article text..."
+              }
               rows={10}
               spellCheck={false}
               aria-describedby="input-hint wc-count"
@@ -559,14 +700,21 @@ export default function App() {
           {!loading && !result && !error && <OutputPlaceholder t={t} />}
 
           {result && <ResultCard result={result} t={t} />}
-          {result?.suggestions && (
-            <SuggestionsSection suggestions={result.suggestions} t={t} onArticleClick={setSelectedArticle} />
+
+          {result && (
+            <AnalysisDashboard result={result} />
           )}
-        </section>
-      </main>
-    </div>
-  );
-}
+
+          {result?.related_articles && (
+            <RelatedArticlesSection
+              related={result.related_articles}
+            />
+          )}
+                  </section>
+                </main>
+              </div>
+            );
+          } 
 
 function Styles() {
   return (
