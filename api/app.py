@@ -15,6 +15,13 @@ import datetime
 import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
+import jwt
+from functools import wraps
+
+JWT_SECRET = "temporal-secret-key"
+
+USERS = {
+    "admin": "password123",} # DO NOT USE IN PRODUCTION — this is just for demonstration
 
 app = Flask(__name__)
 CORS(app)
@@ -215,7 +222,32 @@ def predict_and_respond(text, model, vectorizer, mode, labels, include_suggestio
 
     return jsonify(response)
 
+# ── Authentication decorator ────────────────────────────────────────────────
 
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header:
+            return jsonify({"error": "Token is missing!"}), 401
+        try:
+            token = auth_header.split(" ")[1]
+
+            payload = jwt.decode(
+                token,
+                JWT_SECRET,
+                algorithms=["HS256"]
+            ) 
+
+            request.user = payload
+        
+        except Exception:
+            return jsonify({"error": "Token is invalid!"}), 401
+        
+        return f(*args, **kwargs)
+    return decorated
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/", methods=["GET"])
@@ -224,6 +256,7 @@ def health():
 
 
 @app.route("/predict/article", methods=["POST"])
+@token_required
 def predict_article():
     data = request.get_json(silent=True)
     if not data or not data.get("text", "").strip():
@@ -258,6 +291,29 @@ def predict_quote():
         include_suggestions=False,
     )
 
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+
+    username = data.get("username")
+    password = data.get("password")
+
+    if username not in USERS:
+        return jsonify({"error": "Invalid username"}), 401
+
+    if USERS[username] != password:
+        return jsonify({"error": "Invalid password"}), 401
+
+    token = jwt.encode(
+        {
+            "username": username, 
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        },
+        JWT_SECRET,
+        algorithm="HS256"
+    )
+
+    return jsonify({"token": token})
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 
