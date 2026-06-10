@@ -349,6 +349,10 @@ export default function App() {
   const textareaRef = useRef(null);
   const t = TRANSLATIONS[lang];
 
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [user, setUser] = useState("");
+  const [password, setPassword] = useState("");
+
   // Register the @font-face in <head> once on mount
   useDyslexicFontFace();
 
@@ -375,6 +379,34 @@ export default function App() {
       if (el) el.remove();
     }
   }, [dyslexic]);
+
+  const handleLogin = async () => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: user, password }),
+      });
+
+      const data = await res.json();
+
+      if(!res.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+      localStorage.setItem("token", data.token);
+      setToken(data.token);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setToken(null);
+  };
 
   const setLang = useCallback((l) => {
     setLangState(l);
@@ -419,7 +451,7 @@ export default function App() {
     try {
       const res = await fetch(`${API_BASE}/predict/article`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ text }),
       });
       const data = await res.json();
@@ -455,6 +487,21 @@ export default function App() {
 
   const stopTTS = () => { window.speechSynthesis.cancel(); setTtsPlaying(false); };
 
+  if (!token) {
+    return (
+      <div style={{minheight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "#f5f3ff"}}>
+        <form onSubmit={handleLogin} style = {{ background: "f5f3ff", padding: 30, borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", width: "100%", maxWidth: 400 }}>
+          <h2>Login Page</h2>
+          <input type="text" placeholder="Username"  value={user} onChange={(e) => setUser(e.target.value)} />
+          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <button type="submit">
+            Login
+            </button>
+        </form>
+      </div>
+    );
+  }
+
   if (selectedArticle) {
     return (
       <div className="app-shell">
@@ -462,6 +509,9 @@ export default function App() {
         <ColorBlindSVGFilters />
         <Styles />
         <header className="topbar">
+          <button className="logout-btn" onClick={logout}>
+            Logout
+            </button>
           <div className="brand">
             <div className="brand-icon" aria-hidden="true"><i className="ti ti-shield-check" /></div>
             <div><div className="brand-name">VerifyAI</div><div className="brand-sub">{t.brandSub}</div></div>
