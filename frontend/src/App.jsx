@@ -688,13 +688,15 @@ export default function App() {
         <ColorBlindSVGFilters />
         <Styles />
         <header className="topbar">
-          <button className="logout-btn" onClick={logout}>
-            Logout
-            </button>
           <div className="brand">
             <div className="brand-icon" aria-hidden="true"><i className="ti ti-shield-check" /></div>
             <div><div className="brand-name">VerifyAI</div><div className="brand-sub">{t.brandSub}</div></div>
           </div>
+          <div className="a11y-wrapper" align="right">
+            <button className="logout-btn" onClick={logout} aria-label="Logout" >
+              Logout
+            </button>
+        </div>
         </header>
         <main className="main-single">
           <ArticleView article={selectedArticle} t={t} onBack={() => setSelectedArticle(null)} />
@@ -725,6 +727,11 @@ export default function App() {
         <div className="brand">
           <div className="brand-icon" aria-hidden="true"><i className="ti ti-shield-check" /></div>
           <div><div className="brand-name">VerifyAI</div><div className="brand-sub">{t.brandSub}</div></div>
+        </div>
+        <div className="a11y-wrapper" align="right">
+            <button className="logout-btn" onClick={logout} aria-label="Logout" >
+              Logout
+            </button>
         </div>
       </header>
 
