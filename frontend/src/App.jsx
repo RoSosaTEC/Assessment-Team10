@@ -380,7 +380,7 @@ export default function App() {
     }
   }, [dyslexic]);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const res = await fetch(`${API_BASE}/login`, {
