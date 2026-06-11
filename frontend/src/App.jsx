@@ -118,7 +118,7 @@ function DarkModeToggle({ dark, onToggle }) {
 
 // ── Login Page ────────────────────────────────────────────────────────────────
 
-function LoginPage({ onLogin, dark, onToggleDark }) {
+function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -276,14 +276,176 @@ function LoginPage({ onLogin, dark, onToggleDark }) {
             <button
               type="button"
               className="login-register-link"
-              onClick={() => alert("Registration coming soon!")}
+              onClick={() => onShowRegister()}
             >
-              Request access
+              Create an account
             </button>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+function RegisterPage({ onRegister, dark, onToggleDark, onShowLogin }) {
+  const [user, setUser] = useState("");
+  const [mail, setMail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showPass, setShowPass] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user.trim() || !mail.trim() || !password.trim()) {
+      setError("Please enter all required fields.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user,
+          email: mail,
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Registration failed");
+      }
+
+      // Auto-login
+      const loginRes = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user,
+          password,
+        }),
+      });
+
+      const loginData = await loginRes.json();
+
+      if (!loginRes.ok) {
+        throw new Error(loginData.error || "Login failed");
+      }
+
+      localStorage.setItem("token", loginData.token);
+      onRegister(loginData.token);
+    } 
+    catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="register-shell">
+      <ColorBlindSVGFilters />
+
+      {/* Dark mode toggle — top-right corner */}
+      <div className="register-dm-wrap">
+        <DarkModeToggle dark={dark} onToggle={onToggleDark} />
+      </div>
+
+
+      {/* Right panel — form */}
+            <h1>Create an account</h1>
+            <p>Sign up for your VerifyAI account</p>
+
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <div className="login-error" role="alert">
+                <i className="ti ti-alert-circle" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="login-user" className="login-label">Username</label>
+              <div className="login-input-wrap">
+                <i className="ti ti-user login-input-icon" />
+                <input
+                  id="login-user"
+                  type="text"
+                  className="login-input"
+                  placeholder="Enter your username"
+                  value={user}
+                  onChange={e => setUser(e.target.value)}
+                  autoComplete="username"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="login-pass" className="login-label">Password</label>
+              <div className="login-input-wrap">
+                <i className="ti ti-lock login-input-icon" />
+                <input
+                  id="login-pass"
+                  type={showPass ? "text" : "password"}
+                  className="login-input"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="login-eye"
+                  onClick={() => setShowPass(s => !s)}
+                  aria-label={showPass ? "Hide password" : "Show password"}
+                >
+                  <i className={`ti ${showPass ? "ti-eye-off" : "ti-eye"}`} />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="login-mail" className="login-label">Email</label>
+              <div className="login-input-wrap">
+                <i className="ti ti-user login-input-icon" />
+                <input
+                  id="login-mail"
+                  type="text"
+                  className="login-input"
+                  placeholder="Enter your email"
+                  value={mail}
+                  onChange={e => setMail(e.target.value)}
+                  autoComplete="email"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="login-submit" disabled={loading}>
+              {loading ? (
+                <><span className="spin" aria-hidden="true" /> Signing in…</>
+              ) : (
+                <><i className="ti ti-login" aria-hidden="true" /> Sign in</>
+              )}
+            </button>
+          </form>
+
+          <p className="login-register">
+            Already have an account?{" "}
+            <button
+              type="button"
+              className="login-register-link"
+              onClick={() => onShowLogin()}
+            >
+              Log into your account
+            </button>
+          </p>
+        </div>
   );
 }
 
@@ -585,6 +747,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [inputMode, setInputMode] = useState("text");
+  const [authMode, setAuthMode] = useState("login");
 
   const [lang, setLangState] = useState("en");
   const [cbMode, setCbModeState] = useState("none");
@@ -626,7 +789,7 @@ export default function App() {
   }, [dyslexic]);
 
   const handleLogin = (newToken) => setToken(newToken);
-  const logout = () => { localStorage.removeItem("token"); setToken(null); };
+  const logout = () => { localStorage.removeItem("token"); setToken(null); setAuthMode("login")};
 
   const setLang = useCallback((l) => { setLangState(l); document.documentElement.lang = l; }, []);
   const setCbMode = useCallback((mode) => { setCbModeState(mode); document.body.style.filter = CB_FILTERS[mode] || "none"; }, []);
@@ -677,8 +840,23 @@ export default function App() {
     setTtsPlaying(true);
   };
 
-  if (!token) return <LoginPage onLogin={handleLogin} dark={dark} onToggleDark={toggleDark} />;
-
+  if (!token) {
+    return authMode === "login" ? (
+      <LoginPage
+        onLogin={handleLogin}
+        dark={dark}
+        onToggleDark={toggleDark}
+        onShowRegister={() => setAuthMode("register")}
+      />
+    ) : (
+      <RegisterPage
+        dark={dark}
+        onToggleDark={toggleDark}
+        onRegister={handleLogin}
+        onShowLogin={() => setAuthMode("login")}
+      />
+    );
+  }
   return (
     <div className="app-shell">
       <ColorBlindSVGFilters />
