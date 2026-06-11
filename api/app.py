@@ -6,6 +6,7 @@ Endpoints:
   POST /predict/url         — fetch URL and analyze article
   POST /predict/quote       — LIAR model (short political statements)
 """
+# ── External libraries ────────────────────────────────────────────────────────
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -14,12 +15,9 @@ import joblib
 import os
 import datetime
 import numpy as np
-# ── External libraries ────────────────────────────────────────────────────────
-
 import re
 import pandas as pd
-import sklearn.metrics.pairwise 
-import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity
 import trafilatura
 from textblob import TextBlob
 import textstat
@@ -102,12 +100,8 @@ def log_prediction(user_id, input_text, verdict, confidence, top_words):
     try:
         return db_log_prediction(user_id, input_text, verdict, confidence, top_words)
     except Exception as e:
-        conn.rollback()
         print(f"DB log error: {e}")
-
-    finally:
-        cursor.close()
-        conn.close()
+        return None
 
 # ── Helpers: ──────────────────────────────────────────────────
 
@@ -369,7 +363,7 @@ def predict_and_respond(text, model, vectorizer, mode, labels, run_dashboard=Fal
     top_words  = get_top_words(vectorizer, tfidf)
 
     user_id = getattr(request, "user", {}).get("user_id")
-    log_prediction(user_id,mode, text, verdict, confidence)
+    log_prediction(user_id, text, verdict, confidence, top_words)
 
     response = {
         "verdict":    verdict,
@@ -404,6 +398,9 @@ def predict_and_respond(text, model, vectorizer, mode, labels, run_dashboard=Fal
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+
+        if request.method == "OPTIONS":
+            return f(*args, **kwargs)
 
         auth_header = request.headers.get("Authorization")
 
@@ -453,6 +450,7 @@ def predict_article():
 
 
 @app.route("/predict/url", methods=["POST"])
+@token_required
 def predict_url():
     """Fetch article from a URL and analyze it."""
     data = request.get_json(silent=True)
@@ -486,6 +484,7 @@ def predict_url():
 
 
 @app.route("/predict/quote", methods=["POST"])
+@token_required
 def predict_quote():
     """Analyze a short political statement or quote."""
     data = request.get_json(silent=True)
@@ -645,8 +644,7 @@ def login():
         {
             "user_id": user["id"],
             "username": user["username"],
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-        },
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)        },
         JWT_SECRET,
         algorithm="HS256"
     )

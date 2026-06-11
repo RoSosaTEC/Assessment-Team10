@@ -626,7 +626,7 @@ export default function App() {
         const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
