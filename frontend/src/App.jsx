@@ -267,127 +267,194 @@ function ResultCard({ result, t }) {
   );
 }
 
+function MiniBar({ value, max, color }) {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setWidth((value / max) * 100));
+    return () => cancelAnimationFrame(id);
+  }, [value, max]);
+  return (
+    <div style={{ height: 8, background: "rgba(0,0,0,0.08)", borderRadius: 4, overflow: "hidden", marginTop: 6 }}>
+      <div style={{ height: "100%", width: `${width}%`, background: color, borderRadius: 4, transition: "width 0.8s cubic-bezier(0.34,1.56,0.64,1)" }} />
+    </div>
+  );
+}
+
 function AnalysisDashboard({ result }) {
   if (!result?.analysis) return null;
-
   const { sentiment, readability, stats } = result.analysis;
+  const isFake = result.verdict === "FAKE";
+  const accent = isFake ? "var(--red-m)" : "var(--grn-m)";
+
+  // Normalize reading ease 0-100 (already 0-100 from textstat)
+  const easeVal  = Math.max(0, Math.min(100, readability.reading_ease));
+  // Grade level typically 1-16, cap at 16
+  const gradeVal = Math.max(0, Math.min(16, readability.grade_level));
+  // Subjectivity already 0-1
+  const subjVal  = Math.round(sentiment.subjectivity * 100);
+  // Polarity -1 to 1, map to 0-100
+  const polarVal = Math.round((sentiment.polarity + 1) / 2 * 100);
+
+  const metrics = [
+    {
+      label: "Reading ease",
+      value: `${easeVal.toFixed(0)} / 100`,
+      bar: easeVal,
+      max: 100,
+      color: easeVal < 40 ? "#f59e0b" : "var(--grn-m)",
+      hint: "Higher = easier to read. Fake news tends to score lower.",
+    },
+    {
+      label: "Grade level",
+      value: `Grade ${gradeVal}`,
+      bar: gradeVal,
+      max: 16,
+      color: gradeVal < 8 ? "#f59e0b" : "var(--acc2)",
+      hint: "US school grade equivalent. Fake news often uses simpler language.",
+    },
+    {
+      label: "Subjectivity",
+      value: `${subjVal}% opinionated`,
+      bar: subjVal,
+      max: 100,
+      color: subjVal > 60 ? "#ef4444" : "var(--acc2)",
+      hint: "Higher = more opinionated language. Real journalism scores lower.",
+    },
+    {
+      label: "Tone",
+      value: sentiment.polarity_label,
+      bar: polarVal,
+      max: 100,
+      color: sentiment.polarity < -0.2 ? "#ef4444" : sentiment.polarity > 0.2 ? "var(--grn-m)" : "var(--acc2)",
+      hint: "Emotional tone of the article.",
+    },
+  ];
 
   return (
-    <div
-      style={{
-        background: "white",
-        border: "2px solid var(--acc-border)",
-        borderRadius: "16px",
-        padding: "20px",
-        marginBottom: "16px"
-      }}
-    >
-      <h2>Research Dashboard</h2>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2,1fr)",
-          gap: "12px",
-          marginTop: "12px"
-        }}
-      >
-        <div>
-          <strong>Reading Level</strong>
-          <p>{readability.grade_level}</p>
+    <div style={{ background: "var(--card)", border: "2px solid var(--acc-border)", borderRadius: "var(--r)", overflow: "hidden", marginBottom: 16, animation: "up 0.3s ease 0.05s both" }}>
+      {/* Header */}
+      <div style={{ background: "var(--acc-light)", padding: "16px 20px", borderBottom: "1px solid var(--acc-border)", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 38, height: 38, background: "var(--acc2)", borderRadius: "var(--rsm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <i className="ti ti-chart-bar" style={{ fontSize: 20, color: "#fff" }} />
         </div>
-
         <div>
-          <strong>Reading Ease</strong>
-          <p>{readability.reading_ease}</p>
-        </div>
-
-        <div>
-          <strong>Sentiment</strong>
-          <p>{sentiment.polarity_label}</p>
-        </div>
-
-        <div>
-          <strong>Subjectivity</strong>
-          <p>{sentiment.subjectivity_label}</p>
-        </div>
-
-        <div>
-          <strong>Words</strong>
-          <p>{stats.word_count}</p>
-        </div>
-
-        <div>
-          <strong>Sentences</strong>
-          <p>{stats.sentence_count}</p>
+          <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)" }}>Article Analysis</div>
+          <div style={{ fontSize: 13, fontFamily: "var(--f)", color: "var(--ink3)", marginTop: 2 }}>Linguistic and readability metrics</div>
         </div>
       </div>
 
-      <h3 style={{ marginTop: "20px" }}>
-        Top Influencing Words
-      </h3>
+      <div style={{ padding: "18px 20px" }}>
+        {/* Metric bars grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          {metrics.map(m => (
+            <div key={m.label} style={{ background: "var(--bg)", border: "1px solid var(--acc-border)", borderRadius: "var(--rsm)", padding: "14px 16px" }} title={m.hint}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: 12, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>{m.label}</span>
+                <span style={{ fontSize: 13, fontFamily: "var(--mono)", fontWeight: 600, color: "var(--ink)" }}>{m.value}</span>
+              </div>
+              <MiniBar value={m.bar} max={m.max} color={m.color} />
+            </div>
+          ))}
+        </div>
 
-      <div className="kw-row">
-        {result.top_words?.map(word => (
-          <KeywordPill
-            key={word.word}
-            word={word.word}
-            score={word.score}
-          />
-        ))}
+        {/* Surface stats row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
+          {[
+            { label: "Words", value: stats.word_count },
+            { label: "Sentences", value: stats.sentence_count },
+            { label: "! marks", value: stats.exclamation_count, warn: stats.exclamation_count > 2 },
+            { label: "ALL CAPS", value: stats.caps_words, warn: stats.caps_words > 3 },
+          ].map(s => (
+            <div key={s.label} style={{ background: s.warn ? "rgba(239,68,68,0.07)" : "var(--bg)", border: `1px solid ${s.warn ? "rgba(239,68,68,0.25)" : "var(--acc-border)"}`, borderRadius: "var(--rsm)", padding: "10px 12px", textAlign: "center" }}>
+              <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--mono)", color: s.warn ? "#ef4444" : "var(--ink)" }}>{s.value}</div>
+              <div style={{ fontSize: 11, fontFamily: "var(--f)", color: "var(--ink3)", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Top words bars */}
+        {result.top_words?.length > 0 && (
+          <div>
+            <div style={{ fontSize: 12, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 12 }}>Top influencing words</div>
+            {result.top_words.map((w, i) => {
+              const pct = Math.min(w.score * 100 * 3, 100); // scale for visibility
+              return (
+                <div key={w.word} style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontFamily: "var(--mono)", color: "var(--ink2)", fontWeight: 600 }}>{w.word}</span>
+                    <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--ink3)" }}>{(w.score * 100).toFixed(2)}%</span>
+                  </div>
+                  <div style={{ height: 8, background: "rgba(0,0,0,0.08)", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: accent, borderRadius: 4, transition: `width ${0.6 + i * 0.1}s cubic-bezier(0.34,1.56,0.64,1)` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 function RelatedArticlesSection({ related }) {
-  if (!related) return null;
+  if (!related?.articles?.length) return null;
+  const isFakeFraming = related.framing.includes("verified");
 
   return (
-    <div
-      style={{
-        background: "white",
-        border: "2px solid var(--acc-border)",
-        borderRadius: "16px",
-        padding: "20px"
-      }}
-    >
-      <h2>Related Sources</h2>
-
-      <p>{related.framing}</p>
-
-      {related.articles.map((article, index) => (
-        <div
-          key={index}
-          style={{
-            marginTop: "20px",
-            paddingTop: "20px",
-            borderTop: "1px solid #ddd"
-          }}
-        >
-          <h3>{article.title}</h3>
-
-          <p>
-            <strong>APA Citation</strong>
-          </p>
-
-          <p>{article.citation}</p>
-
-          <p>
-            <strong>Why it's related</strong>
-          </p>
-
-          <p>{article.excerpt}</p>
-
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Read article
-          </a>
+    <div style={{ background: "var(--card)", border: "2px solid var(--acc-border)", borderRadius: "var(--r)", overflow: "hidden", marginBottom: 16, animation: "up 0.3s ease 0.1s both" }}>
+      {/* Header */}
+      <div style={{ background: "var(--acc-light)", padding: "16px 20px", borderBottom: "1px solid var(--acc-border)", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 38, height: 38, background: isFakeFraming ? "#ef4444" : "var(--acc2)", borderRadius: "var(--rsm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <i className={`ti ${isFakeFraming ? "ti-shield-check" : "ti-news"}`} style={{ fontSize: 20, color: "#fff" }} />
         </div>
-      ))}
+        <div>
+          <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)" }}>
+            {isFakeFraming ? "Verified Sources" : "Related Sources"}
+          </div>
+          <div style={{ fontSize: 13, fontFamily: "var(--f)", color: "var(--ink3)", marginTop: 2 }}>{related.framing}</div>
+        </div>
+      </div>
+
+      {/* Articles */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {related.articles.map((article, i) => (
+          <div key={i} style={{ padding: "18px 20px", borderBottom: i < related.articles.length - 1 ? "1px solid var(--acc-border)" : "none" }}>
+            {/* Title + source */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
+              <a href={article.url} target="_blank" rel="noreferrer"
+                style={{ fontSize: 15, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)", textDecoration: "none", lineHeight: 1.4, flex: 1 }}
+                onMouseOver={e => e.target.style.textDecoration = "underline"}
+                onMouseOut={e => e.target.style.textDecoration = "none"}
+              >
+                {article.title}
+              </a>
+              <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--ink3)", whiteSpace: "nowrap", marginTop: 2 }}>{article.source}</span>
+            </div>
+
+            {/* Published date */}
+            {article.published_at && (
+              <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--ink3)", marginBottom: 10 }}>
+                {new Date(article.published_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              </div>
+            )}
+
+            {/* Relevant excerpt */}
+            {article.excerpt && (
+              <div style={{ background: "var(--bg)", border: "1px solid var(--acc-border)", borderRadius: "var(--rsm)", padding: "12px 14px", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 6 }}>Relevant excerpt</div>
+                <div style={{ fontSize: 14, fontFamily: "var(--f)", color: "var(--ink2)", lineHeight: 1.6, fontStyle: "italic" }}>"{article.excerpt}"</div>
+              </div>
+            )}
+
+            {/* APA citation */}
+            <div style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "var(--rsm)", padding: "10px 14px" }}>
+              <div style={{ fontSize: 11, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 5 }}>APA Citation</div>
+              <div style={{ fontSize: 13, fontFamily: '"Times New Roman", Georgia, serif', color: "var(--ink2)", lineHeight: 1.7 }}>{article.citation}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -583,6 +650,17 @@ export default function App() {
         <main className="main-single">
           <ArticleView article={selectedArticle} t={t} onBack={() => setSelectedArticle(null)} />
         </main>
+        {result && (
+          <div
+            style={{
+              maxWidth: "1400px",
+              margin: "0 auto",
+              padding: "0 32px 24px"
+            }}
+          >
+            <TopWordsSection result={result} />
+          </div>
+        )}
       </div>
     );
   }
@@ -698,23 +776,20 @@ export default function App() {
           )}
 
           {!loading && !result && !error && <OutputPlaceholder t={t} />}
-
           {result && <ResultCard result={result} t={t} />}
+        </section>
+      </main>
 
-          {result && (
-            <AnalysisDashboard result={result} />
-          )}
+      {result && (
+        <div style={{ maxWidth: 1400, margin: "0 auto", width: "100%", padding: "0 32px 60px", display: "flex", flexDirection: "column", gap: 16 }}>
+          <AnalysisDashboard result={result} />
+          {result.related_articles && <RelatedArticlesSection related={result.related_articles} />}
+        </div>
+      )}
 
-          {result?.related_articles && (
-            <RelatedArticlesSection
-              related={result.related_articles}
-            />
-          )}
-                  </section>
-                </main>
-              </div>
-            );
-          } 
+    </div>
+  );
+}
 
 function Styles() {
   return (
@@ -794,7 +869,8 @@ function Styles() {
       .tts-stop:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
       /* ── Two-column layout ── */
-      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; width: 100%; padding: 24px 32px 60px; flex: 1; align-items: start; }
+      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; width: 100%; padding: 24px 32px 60px; align-items: start; }
+      .col-right { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
       .main-single { max-width: 800px; margin: 0 auto; width: 100%; padding: 28px 32px 60px; }
 
       /* ── Input card ── */
