@@ -10,18 +10,22 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import joblib
 import os
-import sqlite3
 import datetime
 import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 import jwt
 from functools import wraps
+from dotenv import load_dotenv
+import bcrypt
 
-JWT_SECRET = "temporal-secret-key"
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from db import init_pool, init_schema
 
-USERS = {
-    "admin": "password123",} # DO NOT USE IN PRODUCTION — this is just for demonstration
+
+load_dotenv()
+JWT_SECRET = os.getenv("JWT_SECRET")
 
 app = Flask(__name__)
 CORS(app)
@@ -34,7 +38,7 @@ DATA_DIR  = os.path.join(BASE_DIR, "..", "data")
 
 ISOT_MODEL_PATH = os.path.join(MODEL_DIR, "isot_model.pkl")
 ISOT_VEC_PATH   = os.path.join(MODEL_DIR, "isot_vectorizer.pkl")
-LIAR_MODEL_PATH = os.path.join(MODEL_DIR, "liar_model.pkl")
+#LIAR_MODEL_PATH = os.path.join(MODEL_DIR, "liar_model.pkl")
 LIAR_VEC_PATH   = os.path.join(MODEL_DIR, "liar_vectorizer.pkl")
 
 ISOT_CLEAN_PATH = os.path.join(DATA_DIR, "processed", "isot_clean.csv")
@@ -47,8 +51,8 @@ TRUE_RAW_PATH   = os.path.join(DATA_DIR, "raw", "True.csv")
 print("Loading models...")
 isot_model      = joblib.load(ISOT_MODEL_PATH)
 isot_vectorizer = joblib.load(ISOT_VEC_PATH)
-liar_model      = joblib.load(LIAR_MODEL_PATH)
-liar_vectorizer = joblib.load(LIAR_VEC_PATH)
+#liar_model      = joblib.load(LIAR_MODEL_PATH)
+#liar_vectorizer = joblib.load(LIAR_VEC_PATH)
 print("Models loaded.")
 
 
@@ -96,41 +100,48 @@ real_tfidf_matrix = isot_vectorizer.transform(real_articles["content"])
 print(f"Suggestion index built — {len(real_articles):,} real articles indexed.")
 
 
-# ── SQLite logging ────────────────────────────────────────────────────────────
-
-DB_PATH = os.path.join(BASE_DIR, "predictions.db")
-
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS predictions (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            mode       TEXT,
-            input      TEXT,
-            verdict    TEXT,
-            confidence REAL,
-            timestamp  TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+# ── PostgreSQL logging ────────────────────────────────────────────────────────────
 
 def log_prediction(mode, input_text, verdict, confidence):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.execute(
-            "INSERT INTO predictions (mode, input, verdict, confidence, timestamp) VALUES (?, ?, ?, ?, ?)",
-            (mode, input_text[:500], verdict, confidence, datetime.datetime.utcnow().isoformat())
+        cursor.execute(
+            """
+            INSERT INTO predictions (mode, input, verdict, confidence, timestamp)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (
+                user_id,
+                mode,
+                input_text[:500],
+                verdict,
+                confidence,
+                datetime.datetime.utcnow().isoformat()
+            )
         )
+
         conn.commit()
-        conn.close()
+
     except Exception as e:
+        conn.rollback()
         print(f"DB log error: {e}")
 
-init_db()
-
+    finally:
+        cursor.close()
+        conn.close()
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def get_db_connection():
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        database=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        cursor_factory=RealDictCursor
+    )
 
 def get_top_words(vectorizer, tfidf_vector, n=5):
     """Return the top-n words with the highest TF-IDF scores for this input."""
@@ -197,7 +208,8 @@ def predict_and_respond(text, model, vectorizer, mode, labels, include_suggestio
     verdict    = labels[prediction]
     top_words  = get_top_words(vectorizer, tfidf)
 
-    log_prediction(mode, text, verdict, confidence)
+    user_id = getattr(request, "user", {}).get("user_id")
+    log_prediction(user_id,mode, text, verdict, confidence)
 
     response = {
         "verdict":    verdict,
@@ -291,22 +303,148 @@ def predict_quote():
         include_suggestions=False,
     )
 
+@app.route("/history", methods=["GET"])
+@token_required
+def history():
+    user_id = request.user.get("user_id")
+
+    limit = request.args.get("limit", 20, type=int)
+    offset = request.args.get("offset", 0, type=int)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT id, mode, input, verdict, confidence, timestamp
+            FROM predictions
+            WHERE user_id = %s
+            ORDER BY timestamp DESC
+            LIMIT %s OFFSET %s
+            """,
+            (user_id, limit, offset)
+        )
+
+        rows = cursor.fetchall()
+
+        return jsonify({
+            "history": rows,
+            "limiy": limit,
+            "offset": offset,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+
+    username = data.get("username", "").strip()
+    email = data.get("email", "").strip()
+    password = data.get("password", "")
+
+    if not username or not email or not password:
+        return jsonify({
+            "error": "Username, email, and password are required."
+        }), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Check username
+        cursor.execute(
+            "SELECT id FROM users WHERE username = %s",
+            (username,)
+        )
+
+        if cursor.fetchone():
+            return jsonify({
+                "error": "Username already exists."
+            }), 409
+
+        # Check email
+        cursor.execute(
+            "SELECT id FROM users WHERE email = %s",
+            (email,)
+        )
+
+        if cursor.fetchone():
+            return jsonify({
+                "error": "Email already exists."
+            }), 409
+
+        # Hash password
+        password_hash = bcrypt.hashpw(
+            password.encode("utf-8"),
+            bcrypt.gensalt()
+        ).decode("utf-8")
+
+        # Insert user
+        cursor.execute(
+            """
+            INSERT INTO users (username, email, password_hash)
+            VALUES (%s, %s, %s)
+            RETURNING id
+            """,
+            (username, email, password_hash)
+        )
+
+        user_id = cursor.fetchone()["id"]
+
+        conn.commit()
+
+        return jsonify({
+            "message": "User registered successfully.",
+            "user_id": user_id
+        }), 201
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
 
-    username = data.get("username")
-    password = data.get("password")
+    username = data["username"]
+    password = data["password"]
 
-    if username not in USERS:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+    "SELECT id, username, password_hash FROM users WHERE username = %s",
+    (username,)
+)
+
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not user:
         return jsonify({"error": "Invalid username"}), 401
 
-    if USERS[username] != password:
+    stored_hash = user["password_hash"]
+
+    if not bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
         return jsonify({"error": "Invalid password"}), 401
 
     token = jwt.encode(
         {
-            "username": username, 
+            "user_id": user["id"],
+            "username": user["username"],
             "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         },
         JWT_SECRET,
@@ -316,6 +454,13 @@ def login():
     return jsonify({"token": token})
 
 # ── Run ───────────────────────────────────────────────────────────────────────
+        
+try:
+    init_pool()
+    init_schema()
+    print("Database ready.")
+except Exception as e:
+    print("Database initialization failed:", e)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
