@@ -61,6 +61,61 @@ const CB_FILTERS = {
   mono: "grayscale(100%) contrast(1.15)",
 };
 
+function useHeadLinks() {
+  useEffect(() => {
+    const id = "google-fonts-inter";
+    if (document.getElementById(id)) return;
+    const el = document.createElement("link");
+    el.id = id; el.rel = "stylesheet";
+    el.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap";
+    document.head.appendChild(el);
+  }, []);
+}
+
+// ── Inline SVG Icons ──────────────────────────────────────────────────────────
+const ICONS = {
+  shield:      ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"],
+  brain:       ["M9.5 2a2.5 2.5 0 0 1 0 5H9a7 7 0 0 0-7 7 3 3 0 0 0 3 3h1","M14.5 2a2.5 2.5 0 0 0 0 5H15a7 7 0 0 1 7 7 3 3 0 0 1-3 3h-1","M9 17.5a3.5 3.5 0 0 0 6 0"],
+  chartBar:    ["M3 3v18h18","M7 16v-5","M11 16V9","M15 16v-3","M19 16V6"],
+  news:        ["M4 4h16v16H4z","M4 9h16","M9 9v11"],
+  accessible:  ["M12 3a1 1 0 1 0 2 0 1 1 0 0 0-2 0","M6 8l6 1 6-1","M12 9v4l3 3","M9 13l-2 4"],
+  user:        ["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2","M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"],
+  lock:        ["M5 11V7a7 7 0 0 1 14 0v4","M3 11h18v11H3z","M12 15v3"],
+  eye:         ["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"],
+  eyeOff:      ["M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94","M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19","M1 1l22 22","M10.59 10.59a3 3 0 0 0 4.24 4.24"],
+  login:       ["M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4","M10 17l5-5-5-5","M15 12H3"],
+  userPlus:    ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0","M19 8v6","M22 11h-6"],
+  alertCircle: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","M12 8v4","M12 16h.01"],
+  sun:         ["M12 1v2","M12 21v2","M4.22 4.22l1.42 1.42","M18.36 18.36l1.42 1.42","M1 12h2","M21 12h2","M4.22 19.78l1.42-1.42","M18.36 5.64l1.42-1.42","M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0z"],
+  moon:        ["M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"],
+  logout:      ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4","M16 17l5-5-5-5","M21 12H9"],
+  fileText:    ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M16 13H8","M16 17H8","M10 9H8"],
+  link:        ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71","M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
+  scan:        ["M3 7V5a2 2 0 0 1 2-2h2","M17 3h2a2 2 0 0 1 2 2v2","M21 17v2a2 2 0 0 1-2 2h-2","M7 21H5a2 2 0 0 1-2-2v-2","M8 12h8","M12 8v8"],
+  circleCheck: ["M22 11.08V12a10 10 0 1 1-5.93-9.14","M22 4 12 14.01l-3-3"],
+  circleX:     ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","M15 9l-6 6","M9 9l6 6"],
+  infoCircle:  ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","M12 16v-4","M12 8h.01"],
+  letterA:     ["M4 20L12 4l8 16","M6 14h12"],
+  contrast:    ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","M12 2v20"],
+  volume:      ["M11 5L6 9H2v6h4l5 4V5z","M19.07 4.93a10 10 0 0 1 0 14.14","M15.54 8.46a5 5 0 0 1 0 7.07"],
+  playerStop:  ["M5 5h14v14H5z"],
+  chevronDown: ["M6 9l6 6 6-6"],
+  mail:        ["M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z","M22 6l-10 7L2 6"],
+  helpSmall:   ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3","M12 17h.01"],
+};
+
+function Icon({ name, size = 18, style, className }) {
+  const paths = ICONS[name];
+  if (!paths) return null;
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+      style={style} className={className} aria-hidden="true">
+      {paths.map((d, i) => <path key={i} d={d} />)}
+    </svg>
+  );
+}
+
 function useDyslexicFontFace() {
   useEffect(() => {
     const id = "opendyslexic-face";
@@ -108,7 +163,7 @@ function DarkModeToggle({ dark, onToggle }) {
     >
       <span className="dm-track">
         <span className="dm-thumb">
-          <i className={`ti ${dark ? "ti-moon" : "ti-sun"}`} aria-hidden="true" />
+          <Icon name={dark ? "moon" : "sun"} size={11} />
         </span>
       </span>
       <span className="dm-label">{dark ? "Dark" : "Light"}</span>
@@ -118,12 +173,14 @@ function DarkModeToggle({ dark, onToggle }) {
 
 // ── Login Page ────────────────────────────────────────────────────────────────
 
-function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
+function LoginPage({ onLogin, dark, onToggleDark, onShowRegister }) {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPass, setShowPass] = useState(false);
+
+  useHeadLinks();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -155,7 +212,6 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
       <ColorBlindSVGFilters />
       <LoginStyles />
 
-      {/* Dark mode toggle — top-right corner */}
       <div className="login-dm-wrap">
         <DarkModeToggle dark={dark} onToggle={onToggleDark} />
       </div>
@@ -164,7 +220,7 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
       <div className="login-left">
         <div className="login-brand">
           <div className="login-brand-icon">
-            <i className="ti ti-shield-check" />
+            <Icon name="shield" size={24} />
           </div>
           <div className="login-brand-name">VerifyAI</div>
           <div className="login-brand-sub">Research Assistant</div>
@@ -172,13 +228,13 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
 
         <div className="login-features">
           {[
-            { icon: "ti-brain", text: "ML-powered authenticity scoring" },
-            { icon: "ti-chart-bar", text: "Deep linguistic analysis dashboard" },
-            { icon: "ti-news", text: "Related sources via NewsAPI" },
-            { icon: "ti-accessible", text: "Full accessibility suite built in" },
+            { svgIcon: "brain", text: "ML-powered authenticity scoring" },
+            { svgIcon: "chartBar", text: "Deep linguistic analysis dashboard" },
+            { svgIcon: "news", text: "Related sources via NewsAPI" },
+            { svgIcon: "accessible", text: "Full accessibility suite built in" },
           ].map(f => (
             <div className="login-feature" key={f.text}>
-              <div className="login-feature-icon"><i className={`ti ${f.icon}`} /></div>
+              <div className="login-feature-icon"><Icon name={f.svgIcon} size={20} style={{ color: "rgba(255,255,255,0.9)" }} /></div>
               <span>{f.text}</span>
             </div>
           ))}
@@ -200,7 +256,7 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
           <form onSubmit={handleSubmit} className="login-form" noValidate>
             {error && (
               <div className="login-error" role="alert">
-                <i className="ti ti-alert-circle" />
+                <Icon name="alertCircle" size={18} />
                 <span>{error}</span>
               </div>
             )}
@@ -208,7 +264,7 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
             <div className="login-field">
               <label htmlFor="login-user" className="login-label">Username</label>
               <div className="login-input-wrap">
-                <i className="ti ti-user login-input-icon" />
+                <Icon name="user" size={18} className="login-input-icon-svg" />
                 <input
                   id="login-user"
                   type="text"
@@ -225,7 +281,7 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
             <div className="login-field">
               <label htmlFor="login-pass" className="login-label">Password</label>
               <div className="login-input-wrap">
-                <i className="ti ti-lock login-input-icon" />
+                <Icon name="lock" size={18} className="login-input-icon-svg" />
                 <input
                   id="login-pass"
                   type={showPass ? "text" : "password"}
@@ -241,7 +297,7 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
                   onClick={() => setShowPass(s => !s)}
                   aria-label={showPass ? "Hide password" : "Show password"}
                 >
-                  <i className={`ti ${showPass ? "ti-eye-off" : "ti-eye"}`} />
+                  <Icon name={showPass ? "eyeOff" : "eye"} size={18} />
                 </button>
               </div>
             </div>
@@ -250,7 +306,7 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
               {loading ? (
                 <><span className="spin" aria-hidden="true" /> Signing in…</>
               ) : (
-                <><i className="ti ti-login" aria-hidden="true" /> Sign in</>
+                <><Icon name="login" size={18} /> Sign in</>
               )}
             </button>
 
@@ -278,7 +334,7 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
               className="login-register-link"
               onClick={() => onShowRegister()}
             >
-              Create an account
+              <Icon name="userPlus" size={16} /> Request access
             </button>
           </p>
         </div>
@@ -287,6 +343,8 @@ function LoginPage({ onLogin, dark, onToggleDark , onShowRegister}) {
   );
 }
 
+// ── Register Page ─────────────────────────────────────────────────────────────
+
 function RegisterPage({ onRegister, dark, onToggleDark, onShowLogin }) {
   const [user, setUser] = useState("");
   const [mail, setMail] = useState("");
@@ -294,11 +352,26 @@ function RegisterPage({ onRegister, dark, onToggleDark, onShowLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [strength, setStrength] = useState(0);
+
+  useHeadLinks();
+
+  const calcStrength = (val) => {
+    let s = 0;
+    if (val.length >= 8) s++;
+    if (/[A-Z]/.test(val)) s++;
+    if (/[0-9]/.test(val)) s++;
+    if (/[^A-Za-z0-9]/.test(val)) s++;
+    return s;
+  };
+
+  const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
+  const strengthColors = ["", "#E24B4A", "#F59E0B", "#639922", "#639922"];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user.trim() || !mail.trim() || !password.trim()) {
-      setError("Please enter all required fields.");
+      setError("Please fill in all fields.");
       return;
     }
     setLoading(true);
@@ -307,39 +380,23 @@ function RegisterPage({ onRegister, dark, onToggleDark, onShowLogin }) {
       const res = await fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: user,
-          email: mail,
-          password,
-        }),
+        body: JSON.stringify({ username: user, email: mail, password }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Registration failed");
-      }
+      if (!res.ok) throw new Error(data.error || "Registration failed");
 
       // Auto-login
       const loginRes = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: user,
-          password,
-        }),
+        body: JSON.stringify({ username: user, password }),
       });
-
       const loginData = await loginRes.json();
-
-      if (!loginRes.ok) {
-        throw new Error(loginData.error || "Login failed");
-      }
+      if (!loginRes.ok) throw new Error(loginData.error || "Login failed");
 
       localStorage.setItem("token", loginData.token);
       onRegister(loginData.token);
-    } 
-    catch (err) {
+    } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
@@ -347,56 +404,113 @@ function RegisterPage({ onRegister, dark, onToggleDark, onShowLogin }) {
   };
 
   return (
-    <div className="register-shell">
+    <div className="login-shell">
       <ColorBlindSVGFilters />
+      <LoginStyles />
 
-      {/* Dark mode toggle — top-right corner */}
-      <div className="register-dm-wrap">
+      <div className="login-dm-wrap">
         <DarkModeToggle dark={dark} onToggle={onToggleDark} />
       </div>
 
+      {/* Left panel — steps */}
+      <div className="login-left">
+        <div className="login-brand">
+          <div className="login-brand-icon">
+            <Icon name="shield" size={24} />
+          </div>
+          <div className="login-brand-name">VerifyAI</div>
+          <div className="login-brand-sub">Research Assistant</div>
+        </div>
+
+        <div className="login-features">
+          <div className="reg-steps-eyebrow">Get started in 3 steps</div>
+          {[
+            { num: "1", label: "Create your account", sub: "Just a username, email & password", active: true },
+            { num: "2", label: "Paste any article", sub: "Text or URL — we handle both" },
+            { num: "3", label: "Get your verdict instantly", sub: "ML score + linguistic analysis" },
+          ].map(s => (
+            <div className="login-feature" key={s.num}>
+              <div className="login-feature-icon reg-step-num" style={s.active ? { background: "rgba(255,255,255,0.9)" } : {}}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: s.active ? "var(--acc)" : "rgba(255,255,255,0.9)", lineHeight: 1 }}>{s.num}</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: s.active ? "#fff" : "rgba(255,255,255,0.75)" }}>{s.label}</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>{s.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="login-footer-note">Trained on the ISOT dataset · 44,900 articles</div>
+      </div>
 
       {/* Right panel — form */}
-            <h1>Create an account</h1>
-            <p>Sign up for your VerifyAI account</p>
+      <div className="login-right">
+        <div className="login-card" style={{ maxWidth: 460 }}>
+          <div className="login-card-header">
+            <h1 className="login-title">Create an account</h1>
+            <p className="login-subtitle">Sign up for your VerifyAI account — it's free</p>
+          </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="login-form" noValidate>
             {error && (
               <div className="login-error" role="alert">
-                <i className="ti ti-alert-circle" />
+                <Icon name="alertCircle" size={18} />
                 <span>{error}</span>
               </div>
             )}
 
-            <div>
-              <label htmlFor="login-user" className="login-label">Username</label>
-              <div className="login-input-wrap">
-                <i className="ti ti-user login-input-icon" />
-                <input
-                  id="login-user"
-                  type="text"
-                  className="login-input"
-                  placeholder="Enter your username"
-                  value={user}
-                  onChange={e => setUser(e.target.value)}
-                  autoComplete="username"
-                  autoFocus
-                />
+            {/* Username + Email row */}
+            <div className="reg-two-col">
+              <div className="login-field">
+                <label htmlFor="reg-user" className="login-label">Username</label>
+                <div className="login-input-wrap">
+                  <Icon name="user" size={18} className="login-input-icon-svg" />
+                  <input
+                    id="reg-user"
+                    type="text"
+                    className="login-input"
+                    placeholder="e.g. jsmith"
+                    value={user}
+                    onChange={e => setUser(e.target.value)}
+                    autoComplete="username"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="login-field">
+                <label htmlFor="reg-mail" className="login-label">Email</label>
+                <div className="login-input-wrap">
+                  <Icon name="mail" size={18} className="login-input-icon-svg" />
+                  <input
+                    id="reg-mail"
+                    type="email"
+                    className="login-input"
+                    placeholder="you@email.com"
+                    value={mail}
+                    onChange={e => setMail(e.target.value)}
+                    autoComplete="email"
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label htmlFor="login-pass" className="login-label">Password</label>
+            {/* Password */}
+            <div className="login-field">
+              <label htmlFor="reg-pass" className="login-label">Password</label>
               <div className="login-input-wrap">
-                <i className="ti ti-lock login-input-icon" />
+                <Icon name="lock" size={18} className="login-input-icon-svg" />
                 <input
-                  id="login-pass"
+                  id="reg-pass"
                   type={showPass ? "text" : "password"}
                   className="login-input"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  autoComplete="current-password"
+                  onChange={e => {
+                    setPassword(e.target.value);
+                    setStrength(calcStrength(e.target.value));
+                  }}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -404,36 +518,63 @@ function RegisterPage({ onRegister, dark, onToggleDark, onShowLogin }) {
                   onClick={() => setShowPass(s => !s)}
                   aria-label={showPass ? "Hide password" : "Show password"}
                 >
-                  <i className={`ti ${showPass ? "ti-eye-off" : "ti-eye"}`} />
+                  <Icon name={showPass ? "eyeOff" : "eye"} size={18} />
                 </button>
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="login-mail" className="login-label">Email</label>
-              <div className="login-input-wrap">
-                <i className="ti ti-user login-input-icon" />
-                <input
-                  id="login-mail"
-                  type="text"
-                  className="login-input"
-                  placeholder="Enter your email"
-                  value={mail}
-                  onChange={e => setMail(e.target.value)}
-                  autoComplete="email"
-                  autoFocus
-                />
-              </div>
+              {/* Strength meter */}
+              {password && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: "flex", gap: 4, marginBottom: 5 }}>
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} style={{
+                        flex: 1, height: 4, borderRadius: 2,
+                        background: i <= strength ? strengthColors[strength] : "var(--acc-border)",
+                        transition: "background 0.2s",
+                      }} />
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 12, color: "var(--ink3)" }}>{strengthLabels[strength]}</span>
+                </div>
+              )}
+
+              <span style={{ fontSize: 12, color: "var(--ink3)", display: "flex", alignItems: "center", gap: 5, marginTop: 4 }}>
+                <Icon name="infoCircle" size={14} />
+                Minimum 8 characters
+              </span>
             </div>
 
             <button type="submit" className="login-submit" disabled={loading}>
               {loading ? (
-                <><span className="spin" aria-hidden="true" /> Signing in…</>
+                <><span className="spin" aria-hidden="true" /> Creating account…</>
               ) : (
-                <><i className="ti ti-login" aria-hidden="true" /> Sign in</>
+                <><Icon name="userPlus" size={16} /> Create account</>
               )}
             </button>
+
+            <div className="login-divider"><span>or continue with</span></div>
+
+            <button
+              type="button"
+              className="login-google"
+              onClick={() => alert("Google Auth coming soon!")}
+            >
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              Continue with Google
+            </button>
           </form>
+
+          <p style={{ fontSize: 13, color: "var(--ink3)", textAlign: "center", lineHeight: 1.6, marginTop: 12 }}>
+            By creating an account you agree to our{" "}
+            <a href="#" style={{ color: "var(--acc2)", fontWeight: 500, textDecoration: "none" }}>Terms of Service</a>
+            {" "}and{" "}
+            <a href="#" style={{ color: "var(--acc2)", fontWeight: 500, textDecoration: "none" }}>Privacy Policy</a>
+          </p>
 
           <p className="login-register">
             Already have an account?{" "}
@@ -442,10 +583,12 @@ function RegisterPage({ onRegister, dark, onToggleDark, onShowLogin }) {
               className="login-register-link"
               onClick={() => onShowLogin()}
             >
-              Log into your account
+              Sign in instead
             </button>
           </p>
         </div>
+      </div>
+    </div>
   );
 }
 
@@ -454,21 +597,21 @@ function RegisterPage({ onRegister, dark, onToggleDark, onShowLogin }) {
 function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslexic, hiContrast, toggleHiContrast, fontSize, setFontSize, onTTSRead, ttsPlaying, onTTSStop, hasResult }) {
   const [open, setOpen] = useState(false);
   const CB_OPTIONS = [
-    { id: "none", label: t.cbNone, icon: "ti-eye" },
-    { id: "tritan", label: t.cbTritan, icon: "ti-eye-off" },
-    { id: "mono", label: t.cbMono, icon: "ti-circle-half-2" },
+    { id: "none", label: t.cbNone, svgIcon: "eye" },
+    { id: "tritan", label: t.cbTritan, svgIcon: "eyeOff" },
+    { id: "mono", label: t.cbMono, svgIcon: "contrast" },
   ];
   return (
     <div className="a11y-panel" role="region" aria-label={t.a11yTitle}>
       <button className="a11y-header" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="a11y-body">
         <div className="a11y-header-left">
-          <i className="ti ti-accessible" aria-hidden="true" />
+          <Icon name="accessible" size={20} />
           <div>
             <div className="a11y-header-title">{t.a11yTitle}</div>
             <div className="a11y-header-sub">{t.a11ySub}</div>
           </div>
         </div>
-        <i className={`ti ti-chevron-down a11y-chevron${open ? " open" : ""}`} aria-hidden="true" />
+        <Icon name="chevronDown" size={18} className={`a11y-chevron${open ? " open" : ""}`} />
       </button>
       {open && (
         <div className="a11y-body" id="a11y-body">
@@ -487,7 +630,7 @@ function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslex
             <div className="a11y-row" role="group" aria-label={t.visionLabel}>
               {CB_OPTIONS.map(opt => (
                 <button key={opt.id} className={`a11y-btn${cbMode === opt.id ? " active" : ""}`} onClick={() => setCbMode(opt.id)} aria-pressed={cbMode === opt.id}>
-                  <i className={`ti ${opt.icon}`} aria-hidden="true" />
+                  <Icon name={opt.svgIcon} size={18} />
                   {opt.label}
                 </button>
               ))}
@@ -497,10 +640,10 @@ function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslex
             <div className="a11y-section-label">{t.fontLabel}</div>
             <div className="a11y-row" style={{ marginBottom: 10 }}>
               <button className={`a11y-btn${dyslexic ? " active" : ""}`} onClick={toggleDyslexic} aria-pressed={dyslexic}>
-                <i className="ti ti-letter-a" aria-hidden="true" />{t.dyslexicBtn}
+                <Icon name="letterA" size={18} />{t.dyslexicBtn}
               </button>
               <button className={`a11y-btn${hiContrast ? " active" : ""}`} onClick={toggleHiContrast} aria-pressed={hiContrast}>
-                <i className="ti ti-contrast" aria-hidden="true" />{t.contrastBtn}
+                <Icon name="contrast" size={18} />{t.contrastBtn}
               </button>
             </div>
             <div className="fs-row">
@@ -517,11 +660,11 @@ function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslex
             <div className="tts-bar">
               {!ttsPlaying ? (
                 <button className="tts-btn" onClick={onTTSRead} disabled={!hasResult} aria-label={t.ttsRead}>
-                  <i className="ti ti-volume" aria-hidden="true" />{t.ttsRead}
+                  <Icon name="volume" size={18} />{t.ttsRead}
                 </button>
               ) : (
                 <button className="tts-stop" onClick={onTTSStop} aria-label={t.ttsStop}>
-                  <i className="ti ti-player-stop" aria-hidden="true" />{t.ttsStop}
+                  <Icon name="playerStop" size={18} />{t.ttsStop}
                 </button>
               )}
               <span className="tts-label">{t.ttsHint}</span>
@@ -557,7 +700,7 @@ function ResultCard({ result, t }) {
     <div className={`result-wrap r-${isFake ? "fake" : "real"}`} role="region" aria-label={isFake ? t.headingFake : t.headingReal}>
       <div className="r-hero">
         <div className={`r-icon ${isFake ? "fake" : "real"}`}>
-          <i className={`ti ${isFake ? "ti-circle-x" : "ti-circle-check"}`} aria-hidden="true" />
+          <Icon name={isFake ? "circleX" : "circleCheck"} size={32} style={{ color: "#fff" }} />
         </div>
         <div>
           <div className={`r-vpill ${isFake ? "fake" : "real"}`}>{result.verdict}</div>
@@ -572,7 +715,7 @@ function ResultCard({ result, t }) {
             <span className="kw-lbl">{t.kwLabel}</span>
             <div className="kw-tip-wrap">
               <button className="kw-tip-btn" aria-label={t.kwTooltip} tabIndex={0}>
-                <i className="ti ti-help-small" aria-hidden="true" />
+                <Icon name="helpSmall" size={18} />
               </button>
               <div className="kw-tip-pop" role="tooltip">{t.kwTooltip}</div>
             </div>
@@ -585,7 +728,7 @@ function ResultCard({ result, t }) {
         </div>
       )}
       <div className="r-foot">
-        <i className="ti ti-info-circle" aria-hidden="true" />
+        <Icon name="infoCircle" size={16} />
         <span>{t.disclaimer}</span>
       </div>
     </div>
@@ -626,7 +769,7 @@ function AnalysisDashboard({ result }) {
     <div style={{ background: "var(--card)", border: "2px solid var(--acc-border)", borderRadius: "var(--r)", overflow: "hidden", marginBottom: 16, animation: "up 0.3s ease 0.05s both" }}>
       <div style={{ background: "var(--acc-light)", padding: "16px 20px", borderBottom: "1px solid var(--acc-border)", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ width: 40, height: 40, background: "var(--acc2)", borderRadius: "var(--rsm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <i className="ti ti-chart-bar" style={{ fontSize: 22, color: "#fff" }} />
+          <Icon name="chartBar" size={22} style={{ color: "#fff" }} />
         </div>
         <div>
           <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)" }}>Article Analysis</div>
@@ -689,7 +832,7 @@ function RelatedArticlesSection({ related }) {
     <div style={{ background: "var(--card)", border: "2px solid var(--acc-border)", borderRadius: "var(--r)", overflow: "hidden", marginBottom: 16, animation: "up 0.3s ease 0.1s both" }}>
       <div style={{ background: "var(--acc-light)", padding: "16px 20px", borderBottom: "1px solid var(--acc-border)", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ width: 40, height: 40, background: isFakeFraming ? "#ef4444" : "var(--acc2)", borderRadius: "var(--rsm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <i className={`ti ${isFakeFraming ? "ti-shield-check" : "ti-news"}`} style={{ fontSize: 22, color: "#fff" }} />
+          <Icon name={isFakeFraming ? "shield" : "news"} size={22} style={{ color: "#fff" }} />
         </div>
         <div>
           <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)" }}>{isFakeFraming ? "Verified Sources" : "Related Sources"}</div>
@@ -756,7 +899,6 @@ export default function App() {
   const [fontSize, setFontSizeState] = useState(17);
   const [ttsPlaying, setTtsPlaying] = useState(false);
 
-  // ── Dark mode state (persisted) ──────────────────────────────────────────
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem("verifyai-dark");
     if (saved !== null) return saved === "true";
@@ -773,6 +915,7 @@ export default function App() {
   const textareaRef = useRef(null);
   const t = TRANSLATIONS[lang];
 
+  useHeadLinks();
   useDyslexicFontFace();
 
   useEffect(() => {
@@ -789,7 +932,7 @@ export default function App() {
   }, [dyslexic]);
 
   const handleLogin = (newToken) => setToken(newToken);
-  const logout = () => { localStorage.removeItem("token"); setToken(null); setAuthMode("login")};
+  const logout = () => { localStorage.removeItem("token"); setToken(null); setAuthMode("login"); };
 
   const setLang = useCallback((l) => { setLangState(l); document.documentElement.lang = l; }, []);
   const setCbMode = useCallback((mode) => { setCbModeState(mode); document.body.style.filter = CB_FILTERS[mode] || "none"; }, []);
@@ -857,6 +1000,7 @@ export default function App() {
       />
     );
   }
+
   return (
     <div className="app-shell">
       <ColorBlindSVGFilters />
@@ -865,7 +1009,7 @@ export default function App() {
 
       <header className="topbar">
         <div className="brand">
-          <div className="brand-icon" aria-hidden="true"><i className="ti ti-shield-check" /></div>
+          <div className="brand-icon" aria-hidden="true"><Icon name="shield" size={24} /></div>
           <div>
             <div className="brand-name">VerifyAI</div>
             <div className="brand-sub">{t.brandSub}</div>
@@ -874,7 +1018,7 @@ export default function App() {
         <div className="topbar-actions">
           <DarkModeToggle dark={dark} onToggle={toggleDark} />
           <button className="logout-btn" onClick={logout} aria-label="Logout">
-            <i className="ti ti-logout" aria-hidden="true" />
+            <Icon name="logout" size={18} />
             Logout
           </button>
         </div>
@@ -898,13 +1042,12 @@ export default function App() {
           <div className="input-card">
             <label htmlFor="main-input" className="sr-only">{t.textareaLabel}</label>
 
-            {/* Mode tabs */}
             <div className="mode-tabs">
               <button className={`mode-tab${inputMode === "text" ? " active" : ""}`} onClick={() => setInputMode("text")}>
-                <i className="ti ti-file-text" aria-hidden="true" />Paste Text
+                <Icon name="fileText" size={16} />Paste Text
               </button>
               <button className={`mode-tab${inputMode === "url" ? " active" : ""}`} onClick={() => setInputMode("url")}>
-                <i className="ti ti-link" aria-hidden="true" />URL
+                <Icon name="link" size={16} />URL
               </button>
             </div>
 
@@ -931,7 +1074,7 @@ export default function App() {
                 {wordCount} {t.words}
               </span>
               <button className="analyze-btn" onClick={handleSubmit} disabled={loading || !canSubmit} aria-disabled={loading || !canSubmit}>
-                {loading ? <><span className="spin" aria-hidden="true" />{t.analyzing}</> : <><i className="ti ti-scan" aria-hidden="true" />{t.analyze}</>}
+                {loading ? <><span className="spin" aria-hidden="true" />{t.analyzing}</> : <><Icon name="scan" size={18} />{t.analyze}</>}
               </button>
             </div>
           </div>
@@ -941,7 +1084,7 @@ export default function App() {
         <section className="col-right" aria-label="Analysis output" aria-live="polite">
           {error && (
             <div className="err-card" role="alert">
-              <div className="err-icon"><i className="ti ti-alert-circle" aria-hidden="true" /></div>
+              <div className="err-icon"><Icon name="alertCircle" size={22} /></div>
               <div>
                 <div className="err-title">{t.errorTitle}</div>
                 <div className="err-msg">{error}</div>
@@ -960,7 +1103,6 @@ export default function App() {
         </section>
       </main>
 
-      {/* Dashboard — full width below columns */}
       {result && (
         <div style={{ maxWidth: 1400, margin: "0 auto", width: "100%", padding: "0 32px 60px", display: "flex", flexDirection: "column", gap: 16 }}>
           <AnalysisDashboard result={result} />
@@ -976,9 +1118,6 @@ export default function App() {
 function LoginStyles() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-      @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css');
-
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
       :root {
@@ -991,7 +1130,6 @@ function LoginStyles() {
         --mono: 'JetBrains Mono', 'Fira Code', monospace;
       }
 
-      /* ── Dark mode overrides (login) ── */
       .dark {
         --ink: #E8E4FF; --ink2: #C4BEFF; --ink3: #9890C8;
         --page: #0F0D1A; --card: #1A1730; --card2: #231E3D;
@@ -1001,7 +1139,6 @@ function LoginStyles() {
 
       body { font-family: var(--f); background: var(--page); color: var(--ink); margin: 0; transition: background 0.25s, color 0.25s; }
 
-      /* ── Dark mode toggle (shared) ── */
       .dm-toggle {
         display: flex; align-items: center; gap: 8px;
         background: none; border: none; cursor: pointer;
@@ -1016,67 +1153,49 @@ function LoginStyles() {
         width: 44px; height: 24px;
         background: rgba(255,255,255,0.18);
         border: 1.5px solid rgba(255,255,255,0.3);
-        border-radius: 100px;
-        position: relative;
-        transition: background 0.25s, border-color 0.25s;
-        flex-shrink: 0;
+        border-radius: 100px; position: relative;
+        transition: background 0.25s, border-color 0.25s; flex-shrink: 0;
       }
-      .dm-toggle[aria-pressed="true"] .dm-track {
-        background: rgba(255,255,255,0.28);
-        border-color: rgba(255,255,255,0.5);
-      }
+      .dm-toggle[aria-pressed="true"] .dm-track { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.5); }
       .dm-thumb {
-        position: absolute;
-        top: 2px; left: 2px;
-        width: 18px; height: 18px;
-        background: rgba(255,255,255,0.9);
-        border-radius: 50%;
+        position: absolute; top: 2px; left: 2px;
+        width: 18px; height: 18px; background: rgba(255,255,255,0.9); border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
       }
       .dm-toggle[aria-pressed="true"] .dm-thumb { transform: translateX(20px); }
-      .dm-thumb i { font-size: 11px; color: var(--acc); }
+      .dm-thumb svg { color: var(--acc); }
       .dm-label { font-size: 13px; font-weight: 600; }
 
-      /* login-page specific toggle */
       .login-dm-wrap {
         position: fixed; top: 20px; right: 24px; z-index: 100;
-        background: rgba(74,58,181,0.85);
-        backdrop-filter: blur(8px);
-        border: 1.5px solid rgba(255,255,255,0.2);
-        border-radius: 100px;
+        background: rgba(74,58,181,0.85); backdrop-filter: blur(8px);
+        border: 1.5px solid rgba(255,255,255,0.2); border-radius: 100px;
         padding: 6px 14px 6px 8px;
       }
       .dark .login-dm-wrap { background: rgba(30,26,56,0.9); border-color: rgba(255,255,255,0.12); }
 
-      .login-shell {
-        min-height: 100dvh;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-      }
+      .login-shell { min-height: 100dvh; display: grid; grid-template-columns: 1fr 1fr; }
 
       .login-left {
-        background: var(--acc);
-        display: flex; flex-direction: column; justify-content: center;
-        padding: 60px 56px;
-        position: relative; overflow: hidden;
+        background: var(--acc); display: flex; flex-direction: column; justify-content: center;
+        padding: 60px 56px; position: relative; overflow: hidden;
       }
       .login-left::before {
         content: ''; position: absolute; top: -120px; right: -120px;
-        width: 400px; height: 400px; border-radius: 50%;
-        background: rgba(255,255,255,0.06);
+        width: 400px; height: 400px; border-radius: 50%; background: rgba(255,255,255,0.06);
       }
       .login-left::after {
         content: ''; position: absolute; bottom: -80px; left: -80px;
-        width: 280px; height: 280px; border-radius: 50%;
-        background: rgba(255,255,255,0.04);
+        width: 280px; height: 280px; border-radius: 50%; background: rgba(255,255,255,0.04);
       }
+
       .login-brand { margin-bottom: 56px; position: relative; z-index: 1; }
       .login-brand-icon {
         width: 72px; height: 72px; background: rgba(255,255,255,0.18);
         border-radius: 18px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
       }
-      .login-brand-icon i { font-size: 38px; color: #fff; }
+      .login-brand-icon svg { color: #fff; }
       .login-brand-name { font-size: 42px; font-weight: 700; color: #fff; letter-spacing: -0.03em; line-height: 1; }
       .login-brand-sub { font-size: 16px; color: rgba(255,255,255,0.65); margin-top: 8px; font-weight: 400; }
 
@@ -1087,14 +1206,23 @@ function LoginStyles() {
         background: rgba(255,255,255,0.14); border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
       }
-      .login-feature-icon i { font-size: 20px; color: rgba(255,255,255,0.9); }
+      .login-feature-icon svg { color: rgba(255,255,255,0.9); }
       .login-feature span { font-size: 16px; color: rgba(255,255,255,0.85); font-weight: 400; }
       .login-footer-note { font-size: 13px; color: rgba(255,255,255,0.4); position: relative; z-index: 1; }
 
+      /* Register-specific left panel pieces */
+      .reg-steps-eyebrow {
+        font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.45);
+        text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;
+      }
+      .reg-step-num { border-radius: 50% !important; }
+
+      /* Register two-col input row */
+      .reg-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
       .login-right {
         display: flex; align-items: center; justify-content: center;
-        padding: 60px 40px; background: var(--page);
-        transition: background 0.25s;
+        padding: 60px 40px; background: var(--page); transition: background 0.25s;
       }
       .login-card { width: 100%; max-width: 420px; }
       .login-card-header { margin-bottom: 32px; }
@@ -1106,20 +1234,18 @@ function LoginStyles() {
       .login-error {
         display: flex; align-items: center; gap: 10px;
         background: var(--red-bg); border: 1.5px solid var(--red-b);
-        border-radius: var(--rsm); padding: 12px 16px;
-        font-size: 14px; color: var(--red-t);
+        border-radius: var(--rsm); padding: 12px 16px; font-size: 14px; color: var(--red-t);
       }
-      .login-error i { font-size: 18px; flex-shrink: 0; }
+      .login-error svg { flex-shrink: 0; }
 
       .login-field { display: flex; flex-direction: column; gap: 7px; }
       .login-label { font-size: 14px; font-weight: 600; color: var(--ink2); }
       .login-input-wrap { position: relative; }
       .login-input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--ink3); pointer-events: none; }
+      .login-input-icon-svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink3); pointer-events: none; }
       .login-input {
-        width: 100%; padding: 13px 14px 13px 44px;
-        font-size: 15px; font-family: var(--f);
-        color: var(--ink); background: var(--card);
-        border: 2px solid var(--acc-border);
+        width: 100%; padding: 13px 14px 13px 44px; font-size: 15px; font-family: var(--f);
+        color: var(--ink); background: var(--card); border: 2px solid var(--acc-border);
         border-radius: var(--rsm); outline: none; transition: border-color 0.15s, background 0.25s, color 0.25s;
       }
       .login-input:focus { border-color: var(--acc2); }
@@ -1150,8 +1276,7 @@ function LoginStyles() {
         width: 100%; background: var(--card); border: 2px solid var(--acc-border);
         border-radius: var(--rsm); color: var(--ink); font-family: var(--f);
         font-size: 15px; font-weight: 500; padding: 12px 20px; cursor: pointer;
-        display: flex; align-items: center; justify-content: center; gap: 10px;
-        transition: all 0.14s;
+        display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.14s;
       }
       .login-google:hover { background: var(--acc-light); border-color: var(--acc2); }
 
@@ -1160,13 +1285,16 @@ function LoginStyles() {
         background: none; border: none; cursor: pointer;
         color: var(--acc2); font-family: var(--f); font-size: 14px; font-weight: 600;
         text-decoration: underline; padding: 0;
+        display: inline-flex; align-items: center; gap: 5px; vertical-align: middle;
       }
+      .login-register-link i { font-size: 16px; text-decoration: none; }
       .login-register-link:hover { color: var(--acc); }
 
       @media (max-width: 768px) {
         .login-shell { grid-template-columns: 1fr; }
         .login-left { display: none; }
         .login-right { padding: 40px 24px; }
+        .reg-two-col { grid-template-columns: 1fr; }
       }
     `}</style>
   );
@@ -1175,9 +1303,6 @@ function LoginStyles() {
 function Styles() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-      @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css');
-
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
       :root {
@@ -1192,7 +1317,6 @@ function Styles() {
         --app-fs: 17px;
       }
 
-      /* ── Dark mode token overrides ── */
       .dark {
         --ink: #E8E4FF; --ink2: #C4BEFF; --ink3: #9890C8;
         --page: #0F0D1A; --card: #1A1730; --card2: #231E3D;
@@ -1203,8 +1327,7 @@ function Styles() {
 
       body {
         font-family: var(--f); background: var(--page); color: var(--ink);
-        font-size: var(--app-fs); line-height: 1.6;
-        transition: background 0.25s, color 0.25s;
+        font-size: var(--app-fs); line-height: 1.6; transition: background 0.25s, color 0.25s;
       }
       body.hi-contrast {
         --ink: #000; --ink2: #111; --ink3: #333;
@@ -1223,59 +1346,42 @@ function Styles() {
       .skip-link:focus { top: 14px; }
       .app-shell { min-height: 100vh; display: flex; flex-direction: column; background: var(--page); }
 
-      /* ── Topbar ── */
       .topbar { background: var(--acc); padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
       .dark .topbar { background: #16122E; border-bottom: 1px solid var(--acc-border); }
       .brand { display: flex; align-items: center; gap: 16px; }
       .brand-icon { width: 54px; height: 54px; background: rgba(255,255,255,0.2); border-radius: var(--rsm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-      .brand-icon i { font-size: 30px; color: #fff; }
+      .brand-icon svg { color: #fff; }
       .brand-name { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -0.02em; font-family: var(--f); }
       .brand-sub { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 2px; font-weight: 400; font-family: var(--f); }
       .topbar-actions { display: flex; align-items: center; gap: 12px; }
 
-      /* ── Dark mode toggle ── */
       .dm-toggle {
-        display: flex; align-items: center; gap: 8px;
-        background: none; border: none; cursor: pointer;
-        padding: 4px; border-radius: 100px;
-        color: rgba(255,255,255,0.85);
-        font-family: var(--f); font-size: 13px; font-weight: 600;
-        transition: color 0.15s;
+        display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer;
+        padding: 4px; border-radius: 100px; color: rgba(255,255,255,0.85);
+        font-family: var(--f); font-size: 13px; font-weight: 600; transition: color 0.15s;
       }
       .dm-toggle:hover { color: #fff; }
       .dm-toggle:focus-visible { outline: 2px solid rgba(255,255,255,0.6); outline-offset: 2px; border-radius: 100px; }
       .dm-track {
-        width: 44px; height: 24px;
-        background: rgba(255,255,255,0.15);
-        border: 1.5px solid rgba(255,255,255,0.3);
-        border-radius: 100px; position: relative;
-        transition: background 0.25s, border-color 0.25s;
-        flex-shrink: 0;
+        width: 44px; height: 24px; background: rgba(255,255,255,0.15);
+        border: 1.5px solid rgba(255,255,255,0.3); border-radius: 100px; position: relative;
+        transition: background 0.25s, border-color 0.25s; flex-shrink: 0;
       }
-      .dm-toggle[aria-pressed="true"] .dm-track {
-        background: rgba(255,255,255,0.28);
-        border-color: rgba(255,255,255,0.55);
-      }
+      .dm-toggle[aria-pressed="true"] .dm-track { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.55); }
       .dm-thumb {
-        position: absolute; top: 2px; left: 2px;
-        width: 18px; height: 18px;
-        background: rgba(255,255,255,0.95);
-        border-radius: 50%;
+        position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+        background: rgba(255,255,255,0.95); border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
       }
       .dm-toggle[aria-pressed="true"] .dm-thumb { transform: translateX(20px); }
-      .dm-thumb i { font-size: 11px; color: var(--acc); }
+      .dm-thumb svg { color: var(--acc); }
       .dm-label { font-size: 13px; font-weight: 600; }
 
-      /* login-page specific toggle */
       .login-dm-wrap {
         position: fixed; top: 20px; right: 24px; z-index: 100;
-        background: rgba(74,58,181,0.85);
-        backdrop-filter: blur(8px);
-        border: 1.5px solid rgba(255,255,255,0.2);
-        border-radius: 100px;
-        padding: 6px 14px 6px 8px;
+        background: rgba(74,58,181,0.85); backdrop-filter: blur(8px);
+        border: 1.5px solid rgba(255,255,255,0.2); border-radius: 100px; padding: 6px 14px 6px 8px;
       }
       .dark .login-dm-wrap { background: rgba(22,18,46,0.92); }
 
@@ -1321,7 +1427,7 @@ function Styles() {
 
       .mode-tabs { display: flex; border-bottom: 1px solid var(--acc-border); background: var(--card2); }
       .mode-tab { flex: 1; padding: 12px 16px; background: transparent; border: none; font-family: var(--f); font-size: 14px; font-weight: 500; color: var(--ink3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; border-bottom: 2px solid transparent; transition: all 0.14s; margin-bottom: -1px; }
-      .mode-tab i { font-size: 16px; }
+      .mode-tab svg { flex-shrink: 0; }
       .mode-tab:hover { color: var(--acc); background: var(--acc-light); }
       .mode-tab.active { color: var(--acc); border-bottom-color: var(--acc2); background: var(--card); font-weight: 600; }
       .mode-tab:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
@@ -1355,7 +1461,7 @@ function Styles() {
 
       .err-card { background: var(--red-bg); border: 2px solid var(--red-b); border-radius: var(--r); padding: 18px 20px; display: flex; gap: 14px; animation: up 0.25s ease; }
       .err-icon { width: 42px; height: 42px; background: var(--red-bg); border: 1px solid var(--red-b); border-radius: var(--rsm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-      .err-icon i { font-size: 22px; color: var(--red-t); }
+      .err-icon svg { color: var(--red-t); }
       .err-title { font-size: 17px; font-weight: 600; color: var(--red-t); font-family: var(--f); }
       .err-msg { font-size: 15px; font-family: var(--f); color: var(--red-t); margin-top: 4px; }
       .err-retry { background: transparent; border: 1.5px solid var(--red-b); border-radius: var(--rsm); color: var(--red-t); font-family: var(--f); font-size: 14px; padding: 6px 14px; cursor: pointer; margin-top: 9px; font-weight: 500; }
@@ -1366,7 +1472,7 @@ function Styles() {
       .r-hero { padding: 24px 24px 0; display: flex; align-items: flex-start; gap: 18px; }
       .r-icon { width: 58px; height: 58px; border-radius: var(--rsm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
       .r-icon.fake { background: var(--red-m); } .r-icon.real { background: var(--grn-m); }
-      .r-icon i { font-size: 32px; color: #fff; }
+      .r-icon svg { color: #fff; }
       .r-vpill { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 9px; border-radius: var(--rpill); border: 1px solid; margin-bottom: 5px; }
       .r-vpill.fake { background: var(--red-bg); border-color: var(--red-m); color: var(--red-t); }
       .r-vpill.real { background: var(--grn-bg); border-color: var(--grn-m); color: var(--grn-t); }
@@ -1389,7 +1495,7 @@ function Styles() {
       .kw-row { display: flex; flex-wrap: wrap; gap: 8px; }
       .kw-pill { background: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.18); border-radius: 7px; padding: 6px 13px; font-family: var(--mono); font-size: 13px; color: var(--ink2); cursor: default; }
       .r-foot { padding: 14px 24px; border-top: 1px solid rgba(128,128,128,0.1); background: rgba(128,128,128,0.04); display: flex; align-items: center; gap: 8px; font-size: 13px; font-family: var(--f); color: var(--ink3); }
-      .r-foot i { font-size: 16px; }
+      .r-foot svg { flex-shrink: 0; }
 
       @media (max-width: 900px) {
         .two-col { grid-template-columns: 1fr; padding: 16px 20px 16px; }
@@ -1397,9 +1503,9 @@ function Styles() {
         .topbar { padding: 16px 20px; }
         .brand-name { font-size: 22px; }
         .brand-icon { width: 44px; height: 44px; }
-        .brand-icon i { font-size: 24px; }
+        .brand-icon svg { color: #fff; }
         .dm-label { display: none; }
       }
     `}</style>
   );
-} 
+}
