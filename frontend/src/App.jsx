@@ -14,7 +14,7 @@ const TRANSLATIONS = {
     a11ySub: "Font · color · language · text-to-speech",
     langLabel: "Language / Idioma",
     visionLabel: "Color vision",
-    cbNone: "Default", cbProtan: "Protanopia (red-blind)", cbDeutan: "Deuteranopia (green-blind)", cbTritan: "Tritanopia (blue-blind)", cbMono: "Monochromacy",
+    cbNone: "Default", cbTritan: "Tritanopia (blue-blind)", cbMono: "Monochromacy",
     fontLabel: "Font & size", dyslexicBtn: "Dyslexia-friendly font", contrastBtn: "High contrast", fontSizeLabel: "Text size",
     ttsLabel: "Text-to-speech", ttsRead: "Read result aloud", ttsHint: "Reads the analysis result & verdict", ttsStop: "Stop",
     tryExample: "Try an example:", exReal: "Reuters (real)", exFake: "Fabricated (fake)",
@@ -26,21 +26,18 @@ const TRANSLATIONS = {
     classifierSub: "ISOT dataset classifier · scikit-learn", confidenceLabel: "Classifier confidence",
     kwLabel: "Key influencing words", kwTooltip: "Words with the highest TF-IDF weight — these drove the classifier's decision most.",
     disclaimer: "ML prediction only — always verify with primary sources before sharing.",
-    suggTitle: "Related verified articles", errorTitle: "Analysis failed", retry: "Try again",
-    back: "Back to results", verifiedReal: "verified real",
-    articleNote: "From the ISOT dataset, sourced from Reuters.com and verified as real. Only a snippet is shown.",
+    errorTitle: "Analysis failed", retry: "Try again",
     ttsNoResult: "No result yet. Analyze an article first.",
-    noSuggestions: "No closely related verified articles found for this topic.",
-    keywordsInCommon: "keywords in common", keyword: "keyword", similar: "similar",
     outputPlaceholderTitle: "Your result will appear here",
     outputPlaceholderSub: "Paste an article on the left and click Analyze.",
+    visionLabel: "Color vision",
   },
   es: {
     brandSub: "Detector de autenticidad de noticias",
     a11yTitle: "Herramientas de accesibilidad",
     a11ySub: "Fuente · color · idioma · lectura en voz alta",
     langLabel: "Language / Idioma", visionLabel: "Visión del color",
-    cbNone: "Por defecto", cbProtan: "Protanopía (rojo)", cbDeutan: "Deuteranopía (verde)", cbTritan: "Tritanopía (azul)", cbMono: "Monocromatismo",
+    cbNone: "Por defecto", cbTritan: "Tritanopía (azul)", cbMono: "Monocromatismo",
     fontLabel: "Fuente y tamaño", dyslexicBtn: "Fuente para dislexia", contrastBtn: "Alto contraste", fontSizeLabel: "Tamaño de texto",
     ttsLabel: "Texto a voz", ttsRead: "Leer resultado", ttsHint: "Lee el resultado y veredicto", ttsStop: "Detener",
     tryExample: "Prueba un ejemplo:", exReal: "Reuters (real)", exFake: "Fabricado (falso)",
@@ -52,12 +49,8 @@ const TRANSLATIONS = {
     classifierSub: "Clasificador ISOT · scikit-learn", confidenceLabel: "Confianza del clasificador",
     kwLabel: "Palabras clave influyentes", kwTooltip: "Palabras con mayor peso TF-IDF en la decisión del clasificador.",
     disclaimer: "Solo predicción ML — verifica siempre con fuentes primarias.",
-    suggTitle: "Artículos verificados relacionados", errorTitle: "El análisis falló", retry: "Intentar de nuevo",
-    back: "Volver", verifiedReal: "verificado real",
-    articleNote: "Del conjunto ISOT, de Reuters.com. Solo se muestra un fragmento.",
+    errorTitle: "El análisis falló", retry: "Intentar de nuevo",
     ttsNoResult: "Sin resultado. Analiza un artículo primero.",
-    noSuggestions: "No se encontraron artículos relacionados.",
-    keywordsInCommon: "palabras clave en común", keyword: "palabra clave", similar: "similitud",
     outputPlaceholderTitle: "Tu resultado aparecerá aquí",
     outputPlaceholderSub: "Pega un artículo a la izquierda y presiona Analizar.",
   },
@@ -65,40 +58,26 @@ const TRANSLATIONS = {
 
 const CB_FILTERS = {
   none: "none",
-  protan: "url(#cb-protan)",
-  deutan: "url(#cb-deutan)",
   tritan: "url(#cb-tritan)",
   mono: "grayscale(100%) contrast(1.15)",
 };
 
-// Injects the OpenDyslexic @font-face declaration directly into <head>
-// so the browser registers the font before any override tries to use it.
-// The font files are served by your app's /public/fonts/ folder.
-// Place OpenDyslexic-Regular.otf and OpenDyslexic-Bold.otf there.
-// Fallback: if files aren't present yet, the CSS font-stack will still
-// visibly change (Arial Rounded → more readable than the default).
 function useDyslexicFontFace() {
   useEffect(() => {
     const id = "opendyslexic-face";
     if (document.getElementById(id)) return;
     const style = document.createElement("style");
     style.id = id;
-    // Primary: load from your own /public/fonts/ (static, offline, reliable)
-    // The browser will only fetch these when the font is actually used.
     style.textContent = `
       @font-face {
         font-family: 'OpenDyslexic';
         src: url('/fonts/OpenDyslexic-Regular.otf') format('opentype');
-        font-weight: 400;
-        font-style: normal;
-        font-display: swap;
+        font-weight: 400; font-style: normal; font-display: swap;
       }
       @font-face {
         font-family: 'OpenDyslexic';
         src: url('/fonts/OpenDyslexic-Bold.otf') format('opentype');
-        font-weight: 700;
-        font-style: normal;
-        font-display: swap;
+        font-weight: 700; font-style: normal; font-display: swap;
       }
     `;
     document.head.appendChild(style);
@@ -116,6 +95,174 @@ function ColorBlindSVGFilters() {
     </svg>
   );
 }
+
+// ── Login Page ────────────────────────────────────────────────────────────────
+
+function LoginPage({ onLogin }) {
+  const [user, setUser] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showPass, setShowPass] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user.trim() || !password.trim()) {
+      setError("Please enter your username and password.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Login failed");
+      localStorage.setItem("token", data.token);
+      onLogin(data.token);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="login-shell">
+      <ColorBlindSVGFilters />
+      <LoginStyles />
+
+      {/* Left panel — branding */}
+      <div className="login-left">
+        <div className="login-brand">
+          <div className="login-brand-icon">
+            <i className="ti ti-shield-check" />
+          </div>
+          <div className="login-brand-name">VerifyAI</div>
+          <div className="login-brand-sub">Research Assistant</div>
+        </div>
+
+        <div className="login-features">
+          {[
+            { icon: "ti-brain", text: "ML-powered authenticity scoring" },
+            { icon: "ti-chart-bar", text: "Deep linguistic analysis dashboard" },
+            { icon: "ti-news", text: "Related sources via NewsAPI" },
+            { icon: "ti-accessible", text: "Full accessibility suite built in" },
+          ].map(f => (
+            <div className="login-feature" key={f.text}>
+              <div className="login-feature-icon"><i className={`ti ${f.icon}`} /></div>
+              <span>{f.text}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="login-footer-note">
+          Trained on the ISOT dataset · 44,900 articles
+        </div>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="login-right">
+        <div className="login-card">
+          <div className="login-card-header">
+            <h1 className="login-title">Welcome back</h1>
+            <p className="login-subtitle">Sign in to your VerifyAI account</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="login-form" noValidate>
+            {error && (
+              <div className="login-error" role="alert">
+                <i className="ti ti-alert-circle" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="login-field">
+              <label htmlFor="login-user" className="login-label">Username</label>
+              <div className="login-input-wrap">
+                <i className="ti ti-user login-input-icon" />
+                <input
+                  id="login-user"
+                  type="text"
+                  className="login-input"
+                  placeholder="Enter your username"
+                  value={user}
+                  onChange={e => setUser(e.target.value)}
+                  autoComplete="username"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="login-field">
+              <label htmlFor="login-pass" className="login-label">Password</label>
+              <div className="login-input-wrap">
+                <i className="ti ti-lock login-input-icon" />
+                <input
+                  id="login-pass"
+                  type={showPass ? "text" : "password"}
+                  className="login-input"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="login-eye"
+                  onClick={() => setShowPass(s => !s)}
+                  aria-label={showPass ? "Hide password" : "Show password"}
+                >
+                  <i className={`ti ${showPass ? "ti-eye-off" : "ti-eye"}`} />
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="login-submit" disabled={loading}>
+              {loading ? (
+                <><span className="spin" aria-hidden="true" /> Signing in…</>
+              ) : (
+                <><i className="ti ti-login" aria-hidden="true" /> Sign in</>
+              )}
+            </button>
+
+            <div className="login-divider"><span>or continue with</span></div>
+
+            <button
+              type="button"
+              className="login-google"
+              onClick={() => alert("Google Auth coming soon!")}
+            >
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              Continue with Google
+            </button>
+          </form>
+
+          <p className="login-register">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              className="login-register-link"
+              onClick={() => alert("Registration coming soon!")}
+            >
+              Request access
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Accessibility Panel ───────────────────────────────────────────────────────
 
 function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslexic, hiContrast, toggleHiContrast, fontSize, setFontSize, onTTSRead, ttsPlaying, onTTSStop, hasResult }) {
   const [open, setOpen] = useState(false);
@@ -136,7 +283,6 @@ function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslex
         </div>
         <i className={`ti ti-chevron-down a11y-chevron${open ? " open" : ""}`} aria-hidden="true" />
       </button>
-
       {open && (
         <div className="a11y-body" id="a11y-body">
           <div>
@@ -149,7 +295,6 @@ function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslex
               ))}
             </div>
           </div>
-
           <div>
             <div className="a11y-section-label">{t.visionLabel}</div>
             <div className="a11y-row" role="group" aria-label={t.visionLabel}>
@@ -161,17 +306,14 @@ function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslex
               ))}
             </div>
           </div>
-
           <div>
             <div className="a11y-section-label">{t.fontLabel}</div>
             <div className="a11y-row" style={{ marginBottom: 10 }}>
               <button className={`a11y-btn${dyslexic ? " active" : ""}`} onClick={toggleDyslexic} aria-pressed={dyslexic}>
-                <i className="ti ti-letter-a" aria-hidden="true" />
-                {t.dyslexicBtn}
+                <i className="ti ti-letter-a" aria-hidden="true" />{t.dyslexicBtn}
               </button>
               <button className={`a11y-btn${hiContrast ? " active" : ""}`} onClick={toggleHiContrast} aria-pressed={hiContrast}>
-                <i className="ti ti-contrast" aria-hidden="true" />
-                {t.contrastBtn}
+                <i className="ti ti-contrast" aria-hidden="true" />{t.contrastBtn}
               </button>
             </div>
             <div className="fs-row">
@@ -183,19 +325,16 @@ function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslex
               <span style={{ fontFamily: "var(--mono)", fontSize: 13, fontWeight: 500, color: "var(--acc)", minWidth: 36, textAlign: "right" }} aria-live="polite">{fontSize}px</span>
             </div>
           </div>
-
           <div>
             <div className="a11y-section-label">{t.ttsLabel}</div>
             <div className="tts-bar">
               {!ttsPlaying ? (
                 <button className="tts-btn" onClick={onTTSRead} disabled={!hasResult} aria-label={t.ttsRead}>
-                  <i className="ti ti-volume" aria-hidden="true" />
-                  {t.ttsRead}
+                  <i className="ti ti-volume" aria-hidden="true" />{t.ttsRead}
                 </button>
               ) : (
                 <button className="tts-stop" onClick={onTTSStop} aria-label={t.ttsStop}>
-                  <i className="ti ti-player-stop" aria-hidden="true" />
-                  {t.ttsStop}
+                  <i className="ti ti-player-stop" aria-hidden="true" />{t.ttsStop}
                 </button>
               )}
               <span className="tts-label">{t.ttsHint}</span>
@@ -207,6 +346,8 @@ function A11yPanel({ t, lang, setLang, cbMode, setCbMode, dyslexic, toggleDyslex
   );
 }
 
+// ── Result Components ─────────────────────────────────────────────────────────
+
 function ConfidenceBar({ confidence, isFake }) {
   const [width, setWidth] = useState(0);
   useEffect(() => { const id = requestAnimationFrame(() => setWidth(confidence)); return () => cancelAnimationFrame(id); }, [confidence]);
@@ -214,18 +355,13 @@ function ConfidenceBar({ confidence, isFake }) {
     <div className="r-conf">
       <div className="r-conf-row">
         <span className="r-conf-lbl">Classifier confidence</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: 15, fontWeight: 500, color: "var(--ink)" }}>{confidence}%</span>
+        <span style={{ fontFamily: "var(--mono)", fontSize: 20, fontWeight: 600, color: "var(--ink)" }}>{confidence}%</span>
       </div>
       <div className="bar-track" role="meter" aria-valuenow={confidence} aria-valuemin={0} aria-valuemax={100} aria-label={`Confidence: ${confidence}%`}>
         <div className={`bar-fill ${isFake ? "bf-fake" : "bf-real"}`} style={{ width: `${width}%` }} />
       </div>
     </div>
   );
-}
-
-function KeywordPill({ word, score }) {
-  const opacity = Math.min(0.4 + score * 8, 1);
-  return <span className="kw-pill" style={{ opacity }} title={`Influence: ${score.toFixed(4)}`}>{word}</span>;
 }
 
 function ResultCard({ result, t }) {
@@ -255,7 +391,9 @@ function ResultCard({ result, t }) {
             </div>
           </div>
           <div className="kw-row">
-            {result.top_words.map(kw => <KeywordPill key={kw.word} word={kw.word} score={kw.score} />)}
+            {result.top_words.map(kw => (
+              <span key={kw.word} className="kw-pill" style={{ opacity: Math.min(0.4 + kw.score * 8, 1) }} title={`Influence: ${kw.score.toFixed(4)}`}>{kw.word}</span>
+            ))}
           </div>
         </div>
       )}
@@ -266,6 +404,8 @@ function ResultCard({ result, t }) {
     </div>
   );
 }
+
+// ── Dashboard Components ──────────────────────────────────────────────────────
 
 function MiniBar({ value, max, color }) {
   const [width, setWidth] = useState(0);
@@ -285,99 +425,57 @@ function AnalysisDashboard({ result }) {
   const { sentiment, readability, stats } = result.analysis;
   const isFake = result.verdict === "FAKE";
   const accent = isFake ? "var(--red-m)" : "var(--grn-m)";
-
-  // Normalize reading ease 0-100 (already 0-100 from textstat)
-  const easeVal  = Math.max(0, Math.min(100, readability.reading_ease));
-  // Grade level typically 1-16, cap at 16
+  const easeVal = Math.max(0, Math.min(100, readability.reading_ease));
   const gradeVal = Math.max(0, Math.min(16, readability.grade_level));
-  // Subjectivity already 0-1
-  const subjVal  = Math.round(sentiment.subjectivity * 100);
-  // Polarity -1 to 1, map to 0-100
+  const subjVal = Math.round(sentiment.subjectivity * 100);
   const polarVal = Math.round((sentiment.polarity + 1) / 2 * 100);
-
   const metrics = [
-    {
-      label: "Reading ease",
-      value: `${easeVal.toFixed(0)} / 100`,
-      bar: easeVal,
-      max: 100,
-      color: easeVal < 40 ? "#f59e0b" : "var(--grn-m)",
-      hint: "Higher = easier to read. Fake news tends to score lower.",
-    },
-    {
-      label: "Grade level",
-      value: `Grade ${gradeVal}`,
-      bar: gradeVal,
-      max: 16,
-      color: gradeVal < 8 ? "#f59e0b" : "var(--acc2)",
-      hint: "US school grade equivalent. Fake news often uses simpler language.",
-    },
-    {
-      label: "Subjectivity",
-      value: `${subjVal}% opinionated`,
-      bar: subjVal,
-      max: 100,
-      color: subjVal > 60 ? "#ef4444" : "var(--acc2)",
-      hint: "Higher = more opinionated language. Real journalism scores lower.",
-    },
-    {
-      label: "Tone",
-      value: sentiment.polarity_label,
-      bar: polarVal,
-      max: 100,
-      color: sentiment.polarity < -0.2 ? "#ef4444" : sentiment.polarity > 0.2 ? "var(--grn-m)" : "var(--acc2)",
-      hint: "Emotional tone of the article.",
-    },
+    { label: "Reading ease", value: `${easeVal.toFixed(0)} / 100`, bar: easeVal, max: 100, color: easeVal < 40 ? "#f59e0b" : "var(--grn-m)", hint: "Higher = easier to read. Fake news tends to score lower." },
+    { label: "Grade level", value: `Grade ${gradeVal}`, bar: gradeVal, max: 16, color: gradeVal < 8 ? "#f59e0b" : "var(--acc2)", hint: "US school grade equivalent." },
+    { label: "Subjectivity", value: `${subjVal}% opinionated`, bar: subjVal, max: 100, color: subjVal > 60 ? "#ef4444" : "var(--acc2)", hint: "Higher = more opinionated language." },
+    { label: "Tone", value: sentiment.polarity_label, bar: polarVal, max: 100, color: sentiment.polarity < -0.2 ? "#ef4444" : sentiment.polarity > 0.2 ? "var(--grn-m)" : "var(--acc2)", hint: "Emotional tone of the article." },
   ];
-
   return (
     <div style={{ background: "var(--card)", border: "2px solid var(--acc-border)", borderRadius: "var(--r)", overflow: "hidden", marginBottom: 16, animation: "up 0.3s ease 0.05s both" }}>
-      {/* Header */}
       <div style={{ background: "var(--acc-light)", padding: "16px 20px", borderBottom: "1px solid var(--acc-border)", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 38, height: 38, background: "var(--acc2)", borderRadius: "var(--rsm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <i className="ti ti-chart-bar" style={{ fontSize: 20, color: "#fff" }} />
+        <div style={{ width: 40, height: 40, background: "var(--acc2)", borderRadius: "var(--rsm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <i className="ti ti-chart-bar" style={{ fontSize: 22, color: "#fff" }} />
         </div>
         <div>
           <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)" }}>Article Analysis</div>
           <div style={{ fontSize: 13, fontFamily: "var(--f)", color: "var(--ink3)", marginTop: 2 }}>Linguistic and readability metrics</div>
         </div>
       </div>
-
-      <div style={{ padding: "18px 20px" }}>
-        {/* Metric bars grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div style={{ padding: "20px 20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
           {metrics.map(m => (
-            <div key={m.label} style={{ background: "var(--bg)", border: "1px solid var(--acc-border)", borderRadius: "var(--rsm)", padding: "14px 16px" }} title={m.hint}>
+            <div key={m.label} style={{ background: "var(--card2)", border: "1px solid var(--acc-border)", borderRadius: "var(--rsm)", padding: "14px 16px" }} title={m.hint}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: 12, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>{m.label}</span>
+                <span style={{ fontSize: 11, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>{m.label}</span>
                 <span style={{ fontSize: 13, fontFamily: "var(--mono)", fontWeight: 600, color: "var(--ink)" }}>{m.value}</span>
               </div>
               <MiniBar value={m.bar} max={m.max} color={m.color} />
             </div>
           ))}
         </div>
-
-        {/* Surface stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
           {[
             { label: "Words", value: stats.word_count },
             { label: "Sentences", value: stats.sentence_count },
             { label: "! marks", value: stats.exclamation_count, warn: stats.exclamation_count > 2 },
             { label: "ALL CAPS", value: stats.caps_words, warn: stats.caps_words > 3 },
           ].map(s => (
-            <div key={s.label} style={{ background: s.warn ? "rgba(239,68,68,0.07)" : "var(--bg)", border: `1px solid ${s.warn ? "rgba(239,68,68,0.25)" : "var(--acc-border)"}`, borderRadius: "var(--rsm)", padding: "10px 12px", textAlign: "center" }}>
-              <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--mono)", color: s.warn ? "#ef4444" : "var(--ink)" }}>{s.value}</div>
+            <div key={s.label} style={{ background: s.warn ? "rgba(239,68,68,0.07)" : "var(--card2)", border: `1px solid ${s.warn ? "rgba(239,68,68,0.3)" : "var(--acc-border)"}`, borderRadius: "var(--rsm)", padding: "10px 12px", textAlign: "center" }}>
+              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "var(--mono)", color: s.warn ? "#ef4444" : "var(--ink)" }}>{s.value}</div>
               <div style={{ fontSize: 11, fontFamily: "var(--f)", color: "var(--ink3)", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
             </div>
           ))}
         </div>
-
-        {/* Top words bars */}
         {result.top_words?.length > 0 && (
           <div>
             <div style={{ fontSize: 12, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 12 }}>Top influencing words</div>
             {result.top_words.map((w, i) => {
-              const pct = Math.min(w.score * 100 * 3, 100); // scale for visibility
+              const pct = Math.min(w.score * 100 * 3, 100);
               return (
                 <div key={w.word} style={{ marginBottom: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -400,84 +498,45 @@ function AnalysisDashboard({ result }) {
 function RelatedArticlesSection({ related }) {
   if (!related?.articles?.length) return null;
   const isFakeFraming = related.framing.includes("verified");
-
   return (
     <div style={{ background: "var(--card)", border: "2px solid var(--acc-border)", borderRadius: "var(--r)", overflow: "hidden", marginBottom: 16, animation: "up 0.3s ease 0.1s both" }}>
-      {/* Header */}
       <div style={{ background: "var(--acc-light)", padding: "16px 20px", borderBottom: "1px solid var(--acc-border)", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 38, height: 38, background: isFakeFraming ? "#ef4444" : "var(--acc2)", borderRadius: "var(--rsm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <i className={`ti ${isFakeFraming ? "ti-shield-check" : "ti-news"}`} style={{ fontSize: 20, color: "#fff" }} />
+        <div style={{ width: 40, height: 40, background: isFakeFraming ? "#ef4444" : "var(--acc2)", borderRadius: "var(--rsm)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <i className={`ti ${isFakeFraming ? "ti-shield-check" : "ti-news"}`} style={{ fontSize: 22, color: "#fff" }} />
         </div>
         <div>
-          <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)" }}>
-            {isFakeFraming ? "Verified Sources" : "Related Sources"}
-          </div>
+          <div style={{ fontSize: 17, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)" }}>{isFakeFraming ? "Verified Sources" : "Related Sources"}</div>
           <div style={{ fontSize: 13, fontFamily: "var(--f)", color: "var(--ink3)", marginTop: 2 }}>{related.framing}</div>
         </div>
       </div>
-
-      {/* Articles */}
-      <div style={{ display: "flex", flexDirection: "column" }}>
+      <div>
         {related.articles.map((article, i) => (
           <div key={i} style={{ padding: "18px 20px", borderBottom: i < related.articles.length - 1 ? "1px solid var(--acc-border)" : "none" }}>
-            {/* Title + source */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
               <a href={article.url} target="_blank" rel="noreferrer"
                 style={{ fontSize: 15, fontWeight: 600, fontFamily: "var(--f)", color: "var(--acc)", textDecoration: "none", lineHeight: 1.4, flex: 1 }}
                 onMouseOver={e => e.target.style.textDecoration = "underline"}
                 onMouseOut={e => e.target.style.textDecoration = "none"}
-              >
-                {article.title}
-              </a>
+              >{article.title}</a>
               <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--ink3)", whiteSpace: "nowrap", marginTop: 2 }}>{article.source}</span>
             </div>
-
-            {/* Published date */}
             {article.published_at && (
               <div style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--ink3)", marginBottom: 10 }}>
                 {new Date(article.published_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
               </div>
             )}
-
-            {/* Relevant excerpt */}
             {article.excerpt && (
-              <div style={{ background: "var(--bg)", border: "1px solid var(--acc-border)", borderRadius: "var(--rsm)", padding: "12px 14px", marginBottom: 12 }}>
+              <div style={{ background: "var(--card2)", border: "1px solid var(--acc-border)", borderRadius: "var(--rsm)", padding: "12px 14px", marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 6 }}>Relevant excerpt</div>
                 <div style={{ fontSize: 14, fontFamily: "var(--f)", color: "var(--ink2)", lineHeight: 1.6, fontStyle: "italic" }}>"{article.excerpt}"</div>
               </div>
             )}
-
-            {/* APA citation */}
             <div style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "var(--rsm)", padding: "10px 14px" }}>
               <div style={{ fontSize: 11, fontFamily: "var(--f)", color: "var(--ink3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 5 }}>APA Citation</div>
               <div style={{ fontSize: 13, fontFamily: '"Times New Roman", Georgia, serif', color: "var(--ink2)", lineHeight: 1.7 }}>{article.citation}</div>
             </div>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function ArticleView({ article, t, onBack }) {
-  const backRef = useRef(null);
-  useEffect(() => { backRef.current?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
-  return (
-    <div className="art-view" role="region" aria-label="Article detail">
-      <button className="back-btn" ref={backRef} onClick={onBack}>
-        <i className="ti ti-arrow-left" aria-hidden="true" />{t.back}
-      </button>
-      <div className="art-card" role="article">
-        <div className="art-top">
-          <div className="art-badges">
-            <span className="real-badge">{t.verifiedReal}</span>
-            <span className="sim-lbl">{Math.round(article.similarity * 100)}% {t.similar}</span>
-          </div>
-          <div className="art-title">{article.title}</div>
-          <div className="art-kw"><i className="ti ti-key" aria-hidden="true" />{article.overlap} {article.overlap === 1 ? t.keyword : t.keywordsInCommon}</div>
-        </div>
-        <div className="art-body">{article.snippet}</div>
-        <div className="art-note"><i className="ti ti-info-circle" aria-hidden="true" />{t.articleNote}</div>
       </div>
     </div>
   );
@@ -492,149 +551,68 @@ function OutputPlaceholder({ t }) {
   );
 }
 
+// ── Main App ──────────────────────────────────────────────────────────────────
+
 export default function App() {
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [text, setText] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedArticle, setSelectedArticle] = useState(null);
-  const [inputMode, setInputMode] = useState("text"); 
+  const [inputMode, setInputMode] = useState("text");
 
   const [lang, setLangState] = useState("en");
   const [cbMode, setCbModeState] = useState("none");
   const [dyslexic, setDyslexic] = useState(false);
   const [hiContrast, setHiContrast] = useState(false);
-  const [fontSize, setFontSizeState] = useState(15);
+  const [fontSize, setFontSizeState] = useState(17);
   const [ttsPlaying, setTtsPlaying] = useState(false);
 
   const textareaRef = useRef(null);
   const t = TRANSLATIONS[lang];
 
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
-  const [user, setUser] = useState("");
-  const [password, setPassword] = useState("");
-
-  // Register the @font-face in <head> once on mount
   useDyslexicFontFace();
 
-  // When dyslexic toggle changes, inject or remove the override style in <head>
   useEffect(() => {
     const overrideId = "dyslexic-override";
     let el = document.getElementById(overrideId);
     if (dyslexic) {
-      if (!el) {
-        el = document.createElement("style");
-        el.id = overrideId;
-        document.head.appendChild(el);
-      }
+      if (!el) { el = document.createElement("style"); el.id = overrideId; document.head.appendChild(el); }
       el.textContent = `
-        *, *::before, *::after,
-        input, textarea, button, select, label, p, span, div, h1, h2, h3, h4, h5, h6, a, li {
+        *, *::before, *::after, input, textarea, button, select, label, p, span, div, h1, h2, h3, h4, h5, h6, a, li {
           font-family: 'OpenDyslexic', 'OpenDyslexicAlta', sans-serif !important;
-          letter-spacing: 0.07em !important;
-          word-spacing: 0.15em !important;
-          line-height: 1.9 !important;
-        }
-      `;
-    } else {
-      if (el) el.remove();
-    }
+          letter-spacing: 0.07em !important; word-spacing: 0.15em !important; line-height: 1.9 !important;
+        }`;
+    } else { if (el) el.remove(); }
   }, [dyslexic]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_BASE}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username: user, password }),
-      });
+  const handleLogin = (newToken) => setToken(newToken);
+  const logout = () => { localStorage.removeItem("token"); setToken(null); };
 
-      const data = await res.json();
-
-      if(!res.ok) {
-        throw new Error(data.error || "Login failed");
-      }
-      localStorage.setItem("token", data.token);
-      setToken(data.token);
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-  };
-
-  const setLang = useCallback((l) => {
-    setLangState(l);
-    document.documentElement.lang = l;
-  }, []);
-
-  const setCbMode = useCallback((mode) => {
-    setCbModeState(mode);
-    document.body.style.filter = CB_FILTERS[mode] || "none";
-  }, []);
-
+  const setLang = useCallback((l) => { setLangState(l); document.documentElement.lang = l; }, []);
+  const setCbMode = useCallback((mode) => { setCbModeState(mode); document.body.style.filter = CB_FILTERS[mode] || "none"; }, []);
   const toggleDyslexic = useCallback(() => setDyslexic(d => !d), []);
-
-  const toggleHiContrast = useCallback(() => {
-    setHiContrast(h => {
-      document.body.classList.toggle("hi-contrast", !h);
-      return !h;
-    });
-  }, []);
-
-  const setFontSize = useCallback((v) => {
-    setFontSizeState(v);
-    document.documentElement.style.setProperty("--app-fs", v + "px");
-  }, []);
+  const toggleHiContrast = useCallback(() => { setHiContrast(h => { document.body.classList.toggle("hi-contrast", !h); return !h; }); }, []);
+  const setFontSize = useCallback((v) => { setFontSizeState(v); document.documentElement.style.setProperty("--app-fs", v + "px"); }, []);
 
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
-  const canSubmit =
-  inputMode === "url"
-    ? text.trim().length > 0
-    : text.trim() && wordCount >= 10;
+  const canSubmit = inputMode === "url" ? text.trim().length > 0 : text.trim() && wordCount >= 10;
 
-  const statusText = loading ? t.analyzing
-    : error ? t.errorTitle
-    : result ? (result.verdict === "FAKE" ? t.resultFake : t.resultReal) + " · " + result.confidence + "%"
-    : t.ready;
-  const statusState = loading ? "loading" : error ? "error" : "ok";
+  const stopTTS = () => { window.speechSynthesis.cancel(); setTtsPlaying(false); };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
-    setLoading(true);
-    setResult(null);
-    setError(null);
-    setSelectedArticle(null);
-    stopTTS();
+    setLoading(true); setResult(null); setError(null); stopTTS();
     try {
-      const endpoint =
-        inputMode === "url"
-          ? "/predict/url"
-          : "/predict/article";
-
-        const payload =
-          inputMode === "url"
-            ? { url: text }
-            : { text };
-        
-        const res = await fetch(`${API_BASE}${endpoint}`, {
+      const endpoint = inputMode === "url" ? "/predict/url" : "/predict/article";
+      const payload = inputMode === "url" ? { url: text } : { text };
+      const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Server error");
-      }
-
+      if (!res.ok) throw new Error(data.error || "Server error");
       setResult(data);
     } catch (err) {
       setError(err.message);
@@ -644,11 +622,7 @@ export default function App() {
   };
 
   const loadExample = (type) => {
-    setText(EXAMPLES[type]);
-    setResult(null);
-    setError(null);
-    setSelectedArticle(null);
-    stopTTS();
+    setText(EXAMPLES[type]); setResult(null); setError(null); setInputMode("text"); stopTTS();
     textareaRef.current?.focus();
   };
 
@@ -664,61 +638,10 @@ export default function App() {
     setTtsPlaying(true);
   };
 
-  const stopTTS = () => { window.speechSynthesis.cancel(); setTtsPlaying(false); };
-
-  if (!token) {
-    return (
-      <div style={{minheight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "#f5f3ff"}}>
-        <form onSubmit={handleLogin} style = {{ background: "f5f3ff", padding: 30, borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", width: "100%", maxWidth: 400 }}>
-          <h2>Login Page</h2>
-          <input type="text" placeholder="Username"  value={user} onChange={(e) => setUser(e.target.value)} />
-          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button type="submit">
-            Login
-            </button>
-        </form>
-      </div>
-    );
-  }
-
-  if (selectedArticle) {
-    return (
-      <div className="app-shell">
-  
-        <ColorBlindSVGFilters />
-        <Styles />
-        <header className="topbar">
-          <div className="brand">
-            <div className="brand-icon" aria-hidden="true"><i className="ti ti-shield-check" /></div>
-            <div><div className="brand-name">VerifyAI</div><div className="brand-sub">{t.brandSub}</div></div>
-          </div>
-          <div className="a11y-wrapper" align="right">
-            <button className="logout-btn" onClick={logout} aria-label="Logout" >
-              Logout
-            </button>
-        </div>
-        </header>
-        <main className="main-single">
-          <ArticleView article={selectedArticle} t={t} onBack={() => setSelectedArticle(null)} />
-        </main>
-        {result && (
-          <div
-            style={{
-              maxWidth: "1400px",
-              margin: "0 auto",
-              padding: "0 32px 24px"
-            }}
-          >
-            <TopWordsSection result={result} />
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (!token) return <LoginPage onLogin={handleLogin} />;
 
   return (
     <div className="app-shell">
-
       <ColorBlindSVGFilters />
       <Styles />
       <a className="skip-link" href="#main-input">Skip to article input</a>
@@ -726,13 +649,15 @@ export default function App() {
       <header className="topbar">
         <div className="brand">
           <div className="brand-icon" aria-hidden="true"><i className="ti ti-shield-check" /></div>
-          <div><div className="brand-name">VerifyAI</div><div className="brand-sub">{t.brandSub}</div></div>
+          <div>
+            <div className="brand-name">VerifyAI</div>
+            <div className="brand-sub">{t.brandSub}</div>
+          </div>
         </div>
-        <div className="a11y-wrapper" align="right">
-            <button className="logout-btn" onClick={logout} aria-label="Logout" >
-              Logout
-            </button>
-        </div>
+        <button className="logout-btn" onClick={logout} aria-label="Logout">
+          <i className="ti ti-logout" aria-hidden="true" />
+          Logout
+        </button>
       </header>
 
       <div className="a11y-wrapper">
@@ -752,41 +677,24 @@ export default function App() {
         <section className="col-left" aria-label={t.textareaLabel}>
           <div className="input-card">
             <label htmlFor="main-input" className="sr-only">{t.textareaLabel}</label>
-            <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              padding: "16px",
-              borderBottom: "1px solid var(--acc-border)"
-            }}
-          >
-            <button
-              type="button"
-              className="ex-btn"
-              onClick={() => setInputMode("text")}
-            >
-              Paste Text
-            </button>
 
-            <button
-              type="button"
-              className="ex-btn"
-              onClick={() => setInputMode("url")}
-            >
-              URL
-            </button>
-          </div>
+            {/* Mode tabs */}
+            <div className="mode-tabs">
+              <button className={`mode-tab${inputMode === "text" ? " active" : ""}`} onClick={() => setInputMode("text")}>
+                <i className="ti ti-file-text" aria-hidden="true" />Paste Text
+              </button>
+              <button className={`mode-tab${inputMode === "url" ? " active" : ""}`} onClick={() => setInputMode("url")}>
+                <i className="ti ti-link" aria-hidden="true" />URL
+              </button>
+            </div>
+
             <textarea
               id="main-input"
               ref={textareaRef}
               className="textarea"
               value={text}
               onChange={e => setText(e.target.value)}
-              placeholder={
-                inputMode === "url"
-                  ? "Paste article URL..."
-                  : "Paste article text..."
-              }
+              placeholder={inputMode === "url" ? "Paste article URL here…" : "Paste article text here…"}
               rows={10}
               spellCheck={false}
               aria-describedby="input-hint wc-count"
@@ -803,15 +711,13 @@ export default function App() {
                 {wordCount} {t.words}
               </span>
               <button className="analyze-btn" onClick={handleSubmit} disabled={loading || !canSubmit} aria-disabled={loading || !canSubmit}>
-                {loading
-                  ? <><span className="spin" aria-hidden="true" />{t.analyzing}</>
-                  : <><i className="ti ti-scan" aria-hidden="true" />{t.analyze}</>}
+                {loading ? <><span className="spin" aria-hidden="true" />{t.analyzing}</> : <><i className="ti ti-scan" aria-hidden="true" />{t.analyze}</>}
               </button>
             </div>
           </div>
         </section>
 
-        {/* RIGHT: Output */}
+        {/* RIGHT: Result */}
         <section className="col-right" aria-label="Analysis output" aria-live="polite">
           {error && (
             <div className="err-card" role="alert">
@@ -823,27 +729,206 @@ export default function App() {
               </div>
             </div>
           )}
-
           {loading && !result && !error && (
             <div className="output-placeholder">
               <span className="spin-lg" aria-hidden="true" />
               <div className="output-placeholder-title">{t.analyzing}</div>
             </div>
           )}
-
           {!loading && !result && !error && <OutputPlaceholder t={t} />}
           {result && <ResultCard result={result} t={t} />}
         </section>
       </main>
 
+      {/* Dashboard — full width below columns */}
       {result && (
         <div style={{ maxWidth: 1400, margin: "0 auto", width: "100%", padding: "0 32px 60px", display: "flex", flexDirection: "column", gap: 16 }}>
           <AnalysisDashboard result={result} />
           {result.related_articles && <RelatedArticlesSection related={result.related_articles} />}
         </div>
       )}
-
     </div>
+  );
+}
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+function LoginStyles() {
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+      @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css');
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --ink: #1A1230; --ink2: #3D3660; --ink3: #7B74A8;
+        --page: #F5F3FF; --card: #FFFFFF; --card2: #EEEBFF;
+        --acc: #4A3AB5; --acc2: #6B5CE7; --acc-light: #EAE8FF; --acc-border: #C4BEFF;
+        --red-bg: #FFF0F0; --red-b: #F09595; --red-t: #791F1F; --red-m: #E24B4A;
+        --r: 16px; --rsm: 10px; --rpill: 100px;
+        --f: 'Inter', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', 'Fira Code', monospace;
+      }
+      body { font-family: var(--f); background: var(--page); color: var(--ink); margin: 0; }
+
+      .login-shell {
+        min-height: 100dvh;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      /* LEFT — purple branding panel */
+      .login-left {
+        background: var(--acc);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 60px 56px;
+        position: relative;
+        overflow: hidden;
+      }
+      .login-left::before {
+        content: '';
+        position: absolute;
+        top: -120px; right: -120px;
+        width: 400px; height: 400px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+      }
+      .login-left::after {
+        content: '';
+        position: absolute;
+        bottom: -80px; left: -80px;
+        width: 280px; height: 280px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.04);
+      }
+      .login-brand { margin-bottom: 56px; position: relative; z-index: 1; }
+      .login-brand-icon {
+        width: 72px; height: 72px;
+        background: rgba(255,255,255,0.18);
+        border-radius: 18px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 20px;
+      }
+      .login-brand-icon i { font-size: 38px; color: #fff; }
+      .login-brand-name { font-size: 42px; font-weight: 700; color: #fff; letter-spacing: -0.03em; line-height: 1; }
+      .login-brand-sub { font-size: 16px; color: rgba(255,255,255,0.65); margin-top: 8px; font-weight: 400; }
+
+      .login-features { display: flex; flex-direction: column; gap: 20px; margin-bottom: 56px; position: relative; z-index: 1; }
+      .login-feature { display: flex; align-items: center; gap: 16px; }
+      .login-feature-icon {
+        width: 40px; height: 40px; flex-shrink: 0;
+        background: rgba(255,255,255,0.14);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .login-feature-icon i { font-size: 20px; color: rgba(255,255,255,0.9); }
+      .login-feature span { font-size: 16px; color: rgba(255,255,255,0.85); font-weight: 400; }
+      .login-footer-note { font-size: 13px; color: rgba(255,255,255,0.4); position: relative; z-index: 1; }
+
+      /* RIGHT — form panel */
+      .login-right {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 40px;
+        background: var(--page);
+      }
+      .login-card { width: 100%; max-width: 420px; }
+      .login-card-header { margin-bottom: 32px; }
+      .login-title { font-size: 32px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 8px; }
+      .login-subtitle { font-size: 16px; color: var(--ink3); font-weight: 400; }
+
+      .login-form { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
+
+      .login-error {
+        display: flex; align-items: center; gap: 10px;
+        background: var(--red-bg); border: 1.5px solid var(--red-b);
+        border-radius: var(--rsm); padding: 12px 16px;
+        font-size: 14px; color: var(--red-t);
+      }
+      .login-error i { font-size: 18px; flex-shrink: 0; }
+
+      .login-field { display: flex; flex-direction: column; gap: 7px; }
+      .login-label { font-size: 14px; font-weight: 600; color: var(--ink2); }
+      .login-input-wrap { position: relative; }
+      .login-input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--ink3); pointer-events: none; }
+      .login-input {
+        width: 100%;
+        padding: 13px 14px 13px 44px;
+        font-size: 15px;
+        font-family: var(--f);
+        color: var(--ink);
+        background: var(--card);
+        border: 2px solid var(--acc-border);
+        border-radius: var(--rsm);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .login-input:focus { border-color: var(--acc2); }
+      .login-input::placeholder { color: var(--ink3); }
+      .login-eye {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        background: none; border: none; cursor: pointer; padding: 4px;
+        color: var(--ink3); font-size: 18px; display: flex; align-items: center;
+      }
+      .login-eye:hover { color: var(--acc); }
+
+      .login-submit {
+        width: 100%;
+        background: var(--acc2);
+        border: none;
+        border-radius: var(--rsm);
+        color: #fff;
+        font-family: var(--f);
+        font-size: 16px;
+        font-weight: 700;
+        padding: 14px 20px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 9px;
+        transition: opacity 0.14s, transform 0.1s;
+        margin-top: 4px;
+      }
+      .login-submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+      .login-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+      .spin { width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: rot 0.7s linear infinite; display: inline-block; }
+      @keyframes rot { to { transform: rotate(360deg); } }
+
+      .login-divider { display: flex; align-items: center; gap: 12px; color: var(--ink3); font-size: 13px; }
+      .login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--acc-border); }
+
+      .login-google {
+        width: 100%;
+        background: var(--card);
+        border: 2px solid var(--acc-border);
+        border-radius: var(--rsm);
+        color: var(--ink);
+        font-family: var(--f);
+        font-size: 15px;
+        font-weight: 500;
+        padding: 12px 20px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        transition: all 0.14s;
+      }
+      .login-google:hover { background: var(--acc-light); border-color: var(--acc2); }
+
+      .login-register { text-align: center; font-size: 14px; color: var(--ink3); margin-top: 20px; }
+      .login-register-link {
+        background: none; border: none; cursor: pointer;
+        color: var(--acc2); font-family: var(--f); font-size: 14px; font-weight: 600;
+        text-decoration: underline; padding: 0;
+      }
+      .login-register-link:hover { color: var(--acc); }
+
+      @media (max-width: 768px) {
+        .login-shell { grid-template-columns: 1fr; }
+        .login-left { display: none; }
+        .login-right { padding: 40px 24px; }
+      }
+    `}</style>
   );
 }
 
@@ -854,7 +939,6 @@ function Styles() {
       @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css');
 
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
       :root {
         --ink: #1A1230; --ink2: #3D3660; --ink3: #7B74A8;
         --page: #F5F3FF; --card: #FFFFFF; --card2: #EEEBFF;
@@ -867,7 +951,6 @@ function Styles() {
         --mono: 'JetBrains Mono', 'Fira Code', monospace;
         --app-fs: 17px;
       }
-
       body { font-family: var(--f); background: var(--page); color: var(--ink); font-size: var(--app-fs); line-height: 1.6; }
       body.hi-contrast {
         --ink: #000; --ink2: #111; --ink3: #333;
@@ -875,22 +958,22 @@ function Styles() {
         --acc: #1A0D7A; --acc2: #2B1BB0; --acc-light: #E0DDFF; --acc-border: #6B5CE7;
         --red-m: #C00000; --grn-m: #006600;
       }
-
       .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
       .skip-link { position: absolute; top: -60px; left: 14px; background: var(--acc); color: #fff; padding: 10px 20px; border-radius: var(--rsm); font-size: 16px; font-weight: 600; text-decoration: none; z-index: 100; }
       .skip-link:focus { top: 14px; }
-
       .app-shell { min-height: 100vh; display: flex; flex-direction: column; background: var(--page); }
 
-      /* ── Topbar ── */
-      .topbar { background: var(--acc); padding: 20px 32px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+      .topbar { background: var(--acc); padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
       .brand { display: flex; align-items: center; gap: 16px; }
       .brand-icon { width: 54px; height: 54px; background: rgba(255,255,255,0.2); border-radius: var(--rsm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
       .brand-icon i { font-size: 30px; color: #fff; }
       .brand-name { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -0.02em; font-family: var(--f); }
       .brand-sub { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 2px; font-weight: 400; font-family: var(--f); }
+      .logout-btn { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25); border-radius: var(--rsm); color: rgba(255,255,255,0.9); font-family: var(--f); font-size: 14px; font-weight: 500; padding: 9px 18px; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.14s; }
+      .logout-btn i { font-size: 16px; }
+      .logout-btn:hover { background: rgba(255,255,255,0.22); }
+      .logout-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
-      /* ── A11y panel ── */
       .a11y-wrapper { max-width: 1400px; margin: 0 auto; width: 100%; padding: 20px 32px 0; }
       .a11y-panel { background: var(--card); border: 2px solid var(--acc-border); border-radius: var(--r); overflow: hidden; }
       .a11y-header { background: var(--acc-light); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: none; width: 100%; text-align: left; font-family: var(--f); }
@@ -922,14 +1005,18 @@ function Styles() {
       .tts-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
       .tts-label { font-size: 14px; font-family: var(--f); color: var(--ink3); flex: 1; }
       .tts-stop { background: var(--red-bg); border: 2px solid var(--red-b); border-radius: var(--rsm); color: var(--red-t); font-size: 14px; font-family: var(--f); padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500; }
-      .tts-stop:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
-      /* ── Two-column layout ── */
-      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; width: 100%; padding: 24px 32px 60px; align-items: start; }
+      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; width: 100%; padding: 24px 32px 16px; align-items: start; }
+      .col-left { min-width: 0; }
       .col-right { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-      .main-single { max-width: 800px; margin: 0 auto; width: 100%; padding: 28px 32px 60px; }
 
-      /* ── Input card ── */
+      .mode-tabs { display: flex; border-bottom: 1px solid var(--acc-border); background: var(--card2); }
+      .mode-tab { flex: 1; padding: 12px 16px; background: transparent; border: none; font-family: var(--f); font-size: 14px; font-weight: 500; color: var(--ink3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; border-bottom: 2px solid transparent; transition: all 0.14s; margin-bottom: -1px; }
+      .mode-tab i { font-size: 16px; }
+      .mode-tab:hover { color: var(--acc); background: var(--acc-light); }
+      .mode-tab.active { color: var(--acc); border-bottom-color: var(--acc2); background: var(--card); font-weight: 600; }
+      .mode-tab:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
+
       .input-card { background: var(--card); border: 2px solid var(--acc-border); border-radius: var(--r); overflow: hidden; }
       .input-card:focus-within { border-color: var(--acc2); }
       .textarea { width: 100%; background: transparent; border: none; outline: none; color: var(--ink); font-family: var(--f); font-size: var(--app-fs); line-height: 1.75; padding: 22px 24px; resize: vertical; min-height: 320px; display: block; }
@@ -950,43 +1037,40 @@ function Styles() {
       .spin { width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: rot 0.7s linear infinite; display: inline-block; }
       .spin-lg { width: 36px; height: 36px; border: 3px solid var(--acc-border); border-top-color: var(--acc); border-radius: 50%; animation: rot 0.8s linear infinite; display: block; margin: 0 auto 16px; }
       @keyframes rot { to { transform: rotate(360deg); } }
+      @keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-      /* ── Output placeholder ── */
       .output-placeholder { border: 2px dashed var(--acc-border); border-radius: var(--r); padding: 56px 32px; text-align: center; background: var(--card); display: flex; flex-direction: column; align-items: center; gap: 12px; }
       .output-placeholder-title { font-size: 20px; font-weight: 600; color: var(--ink2); font-family: var(--f); }
       .output-placeholder-sub { font-size: 16px; font-family: var(--f); color: var(--ink3); }
 
-      /* ── Error card ── */
-      .err-card { background: var(--red-bg); border: 2px solid var(--red-b); border-radius: var(--r); padding: 18px 20px; display: flex; gap: 14px; animation: up 0.25s ease; margin-bottom: 16px; }
+      .err-card { background: var(--red-bg); border: 2px solid var(--red-b); border-radius: var(--r); padding: 18px 20px; display: flex; gap: 14px; animation: up 0.25s ease; }
       .err-icon { width: 42px; height: 42px; background: #F7C1C1; border-radius: var(--rsm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
       .err-icon i { font-size: 22px; color: var(--red-t); }
       .err-title { font-size: 17px; font-weight: 600; color: var(--red-t); font-family: var(--f); }
       .err-msg { font-size: 15px; font-family: var(--f); color: var(--red-t); margin-top: 4px; }
       .err-retry { background: transparent; border: 1.5px solid var(--red-b); border-radius: var(--rsm); color: var(--red-t); font-family: var(--f); font-size: 14px; padding: 6px 14px; cursor: pointer; margin-top: 9px; font-weight: 500; }
-      .err-retry:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
-      @keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-      /* ── Result card ── */
-      .result-wrap { border-radius: var(--r); border: 2px solid; overflow: hidden; animation: up 0.28s ease; margin-bottom: 16px; }
+      .result-wrap { border-radius: var(--r); border: 2px solid; overflow: hidden; animation: up 0.28s ease; }
       .r-fake { background: var(--red-bg); border-color: var(--red-m); }
       .r-real { background: var(--grn-bg); border-color: var(--grn-m); }
       .r-hero { padding: 24px 24px 0; display: flex; align-items: flex-start; gap: 18px; }
       .r-icon { width: 58px; height: 58px; border-radius: var(--rsm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
       .r-icon.fake { background: var(--red-m); } .r-icon.real { background: var(--grn-m); }
       .r-icon i { font-size: 32px; color: #fff; }
-      .r-heading { font-size: 22px; font-weight: 700; font-family: var(--f); color: var(--ink); line-height: 1.3; }
+      .r-vpill { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 9px; border-radius: var(--rpill); border: 1px solid; margin-bottom: 5px; }
+      .r-vpill.fake { background: #F7C1C1; border-color: var(--red-m); color: var(--red-t); }
+      .r-vpill.real { background: #C0DD97; border-color: var(--grn-m); color: var(--grn-t); }
+      .r-heading { font-size: 20px; font-weight: 700; font-family: var(--f); color: var(--ink); line-height: 1.3; }
       .r-sub { font-size: 13px; font-family: var(--f); color: var(--ink3); margin-top: 4px; }
       .r-conf { padding: 18px 24px; }
       .r-conf-row { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
       .r-conf-lbl { font-size: 15px; font-family: var(--f); font-weight: 500; color: var(--ink2); }
-      .r-conf-val { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--ink); }
       .bar-track { height: 12px; background: rgba(0,0,0,0.09); border-radius: 6px; overflow: hidden; }
       .bar-fill { height: 100%; border-radius: 6px; transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1); width: 0; }
       .bf-fake { background: var(--red-m); } .bf-real { background: var(--grn-m); }
       .kw-sec { padding: 0 24px 20px; border-top: 1px solid rgba(0,0,0,0.07); padding-top: 18px; }
       .kw-lbl-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-      .kw-lbl { font-size: 13px; font-weight: 600; font-family: var(--f); color: var(--ink2); text-transform: uppercase; letter-spacing: 0.07em; }
+      .kw-lbl { font-size: 12px; font-weight: 600; font-family: var(--f); color: var(--ink2); text-transform: uppercase; letter-spacing: 0.07em; }
       .kw-tip-wrap { position: relative; display: inline-block; }
       .kw-tip-btn { background: rgba(0,0,0,0.06); border: none; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink3); }
       .kw-tip-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
@@ -997,47 +1081,8 @@ function Styles() {
       .r-foot { padding: 14px 24px; border-top: 1px solid rgba(0,0,0,0.07); background: rgba(0,0,0,0.03); display: flex; align-items: center; gap: 8px; font-size: 13px; font-family: var(--f); color: var(--ink3); }
       .r-foot i { font-size: 16px; }
 
-      /* ── Suggestions ── */
-      .sugg-wrap { background: var(--card); border: 2px solid var(--acc-border); border-radius: var(--r); overflow: hidden; animation: up 0.3s ease 0.1s both; }
-      .sugg-head { background: var(--acc-light); padding: 16px 20px; display: flex; align-items: flex-start; gap: 14px; border-bottom: 1px solid var(--acc-border); }
-      .sugg-head-icon { width: 42px; height: 42px; background: var(--acc2); border-radius: var(--rsm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-      .sugg-head-icon i { font-size: 22px; color: #fff; }
-      .sugg-head-title { font-size: 17px; font-weight: 600; font-family: var(--f); color: var(--acc); }
-      .sugg-head-sub { font-size: 13px; font-family: var(--f); color: var(--ink3); margin-top: 3px; }
-      .sugg-item { display: flex; align-items: flex-start; gap: 13px; padding: 16px 20px; border-bottom: 1px solid rgba(74,58,181,0.08); background: transparent; border-left: none; border-right: none; border-top: none; width: 100%; text-align: left; cursor: pointer; transition: background 0.12s; font-family: var(--f); }
-      .sugg-item:last-child { border-bottom: none; }
-      .sugg-item:hover { background: var(--acc-light); }
-      .sugg-item:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
-      .sugg-num { font-family: var(--mono); font-size: 13px; color: var(--ink3); flex-shrink: 0; padding-top: 2px; min-width: 24px; }
-      .sugg-body { flex: 1; min-width: 0; }
-      .sugg-title { font-size: 15px; font-weight: 600; font-family: var(--f); color: var(--ink); margin-bottom: 5px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-      .sugg-snip { font-size: 14px; font-family: var(--f); color: var(--ink3); line-height: 1.55; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-      .sugg-tags { display: flex; gap: 12px; }
-      .sugg-tag { font-size: 12px; font-family: var(--mono); color: var(--ink3); display: flex; align-items: center; gap: 4px; }
-      .sugg-tag i { font-size: 14px; color: var(--acc2); }
-      .sugg-arr { font-size: 20px; color: var(--acc-border); flex-shrink: 0; opacity: 0; transition: opacity 0.14s, transform 0.14s; }
-      .sugg-item:hover .sugg-arr, .sugg-item:focus-visible .sugg-arr { opacity: 1; color: var(--acc2); transform: translateX(3px); }
-      .empty { padding: 24px; text-align: center; font-size: 15px; font-family: var(--f); color: var(--ink3); }
-
-      /* ── Article view ── */
-      .art-view { display: flex; flex-direction: column; gap: 16px; }
-      .back-btn { background: var(--card); border: 2px solid var(--acc-border); border-radius: var(--rsm); color: var(--acc); font-family: var(--f); font-size: 15px; font-weight: 600; padding: 10px 18px; cursor: pointer; display: flex; align-items: center; gap: 8px; align-self: flex-start; }
-      .back-btn:hover { background: var(--acc-light); }
-      .back-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
-      .art-card { background: var(--card); border: 2px solid var(--grn-b); border-radius: var(--r); overflow: hidden; }
-      .art-top { background: var(--grn-bg); padding: 22px 24px; border-bottom: 1px solid var(--grn-b); }
-      .art-badges { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-      .real-badge { background: var(--grn-m); color: #fff; font-family: var(--mono); font-size: 12px; padding: 4px 13px; border-radius: var(--rpill); font-weight: 600; }
-      .sim-lbl { font-size: 14px; font-family: var(--mono); color: var(--grn-t); }
-      .art-title { font-size: 22px; font-weight: 700; font-family: var(--f); color: var(--ink); line-height: 1.35; }
-      .art-kw { font-size: 14px; font-family: var(--f); color: var(--teal); display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 500; }
-      .art-body { padding: 20px 24px; font-size: 16px; font-family: var(--f); line-height: 1.78; color: var(--ink2); }
-      .art-note { padding: 14px 24px; border-top: 1px solid var(--grn-b); background: var(--grn-bg); font-size: 13px; font-family: var(--f); color: var(--grn-t); display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
-      .art-note i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-
-      /* ── Responsive ── */
       @media (max-width: 900px) {
-        .two-col { grid-template-columns: 1fr; padding: 16px 20px 60px; }
+        .two-col { grid-template-columns: 1fr; padding: 16px 20px 16px; }
         .a11y-wrapper { padding: 14px 20px 0; }
         .topbar { padding: 16px 20px; }
         .brand-name { font-size: 22px; }
