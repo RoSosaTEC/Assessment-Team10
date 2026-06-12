@@ -881,6 +881,28 @@ function OutputPlaceholder({ t }) {
   );
 }
 
+function UserMenu({ onProfile, onHistory, onLogout }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="user-menu">
+      <button className="user-menu-btn" onClick={() => setOpen(o => !o)}>
+        <Icon name="user" size={18} />
+        Account
+        <Icon name="chevronDown" size={16} />
+      </button>
+
+      {open && (
+        <div className="user-menu-dropdown">
+          <button onClick={onProfile}>Profile</button>
+          <button onClick={onHistory}>History</button>
+          <button onClick={onLogout}>Logout</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -891,6 +913,12 @@ export default function App() {
   const [error, setError] = useState(null);
   const [inputMode, setInputMode] = useState("text");
   const [authMode, setAuthMode] = useState("login");
+
+  const [view, setView] = useState("analyze");
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState(null);
+  const [historyError, setHistoryError] = useState(null);
 
   const [lang, setLangState] = useState("en");
   const [cbMode, setCbModeState] = useState("none");
@@ -980,6 +1008,51 @@ export default function App() {
     }
   };
 
+  const loadHistory = async () => {
+  setView("history");
+  setHistoryLoading(true);
+  setHistoryError(null);
+
+  try {
+    const res = await fetch(`${API_BASE}/history`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to load history");
+
+    setHistory(data.history || []);
+  } catch (err) {
+    setHistoryError(err.message);
+  } finally {
+    setHistoryLoading(false);
+  }
+};
+
+const loadHistoryItem = async (id) => {
+  setHistoryLoading(true);
+  setHistoryError(null);
+
+  try {
+    const res = await fetch(`${API_BASE}/history/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to load dashboard");
+
+    setSelectedHistory(data);
+  } catch (err) {
+    setHistoryError(err.message);
+  } finally {
+    setHistoryLoading(false);
+  }
+};
+
   const loadExample = (type) => {
     setText(EXAMPLES[type]); setResult(null); setError(null); setInputMode("text"); stopTTS();
     textareaRef.current?.focus();
@@ -1022,7 +1095,7 @@ export default function App() {
       <a className="skip-link" href="#main-input">Skip to article input</a>
 
       <header className="topbar">
-        <div className="brand">
+        <div className="brand" onClick={() => setView("analyze")} style={{ cursor: "pointer" }} aria-label="Go to article analysis view">
           <div className="brand-icon" aria-hidden="true"><Icon name="shield" size={24} /></div>
           <div>
             <div className="brand-name">VerifyAI</div>
@@ -1031,10 +1104,11 @@ export default function App() {
         </div>
         <div className="topbar-actions">
           <DarkModeToggle dark={dark} onToggle={toggleDark} />
-          <button className="logout-btn" onClick={logout} aria-label="Logout">
-            <Icon name="logout" size={18} />
-            Logout
-          </button>
+          <UserMenu
+            onProfile={() => setView("profile")}
+            onHistory={loadHistory}
+            onLogout={logout}
+          />
         </div>
       </header>
 
@@ -1050,6 +1124,65 @@ export default function App() {
         />
       </div>
 
+      {view === "profile" && (
+  <main className="profile-page">
+    <div className="input-card">
+      <h2>Profile</h2>
+      <p>Account details and password management can go here.</p>
+    </div>
+  </main>
+)}
+
+{view === "history" && (
+  <main className="history-page">
+    <section className="history-list">
+      <h2>History</h2>
+
+      {historyLoading && <p>Loading history...</p>}
+      {historyError && <p className="err-msg">{historyError}</p>}
+
+      {!historyLoading && history.length === 0 && (
+        <p>No previous analyses yet.</p>
+      )}
+
+      {history.map(item => (
+        <button
+          key={item.id}
+          className="history-item"
+          onClick={() => loadHistoryItem(item.id)}
+        >
+          <strong>{item.title}</strong>
+          <span>{item.verdict} · {item.confidence}%</span>
+          <small>{new Date(item.created_at).toLocaleString()}</small>
+        </button>
+      ))}
+    </section>
+
+    <section className="history-dashboard">
+      {!selectedHistory && <OutputPlaceholder t={t} />}
+
+      {selectedHistory && (
+        <>
+          {selectedHistory.input_text && (
+            <div className="input-card" style={{ marginBottom: 16 }}>
+              <h3>Original article</h3>
+              <p style={{ whiteSpace: "pre-wrap" }}>{selectedHistory.input_text}</p>
+            </div>
+          )}
+
+          <ResultCard result={selectedHistory} t={t} />
+          <AnalysisDashboard result={selectedHistory} />
+          {selectedHistory.related_articles && (
+            <RelatedArticlesSection related={selectedHistory.related_articles} />
+          )}
+        </>
+      )}
+    </section>
+  </main>
+)}
+
+  {view === "analyze" && (
+    <>
       <main className="two-col">
         {/* LEFT: Input */}
         <section className="col-left" aria-label={t.textareaLabel}>
@@ -1116,15 +1249,16 @@ export default function App() {
           {result && <ResultCard result={result} t={t} />}
         </section>
       </main>
-
       {result && (
         <div style={{ maxWidth: 1400, margin: "0 auto", width: "100%", padding: "0 32px 60px", display: "flex", flexDirection: "column", gap: 16 }}>
           <AnalysisDashboard result={result} />
           {result.related_articles && <RelatedArticlesSection related={result.related_articles} />}
         </div>
       )}
-    </div>
-  );
+    </>
+  )}
+</div>
+);
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
