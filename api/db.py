@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS users (
     username      VARCHAR(50)  UNIQUE NOT NULL,
     email         VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT         NOT NULL,
+    token_version INTEGER      DEFAULT 0,
     created_at    TIMESTAMP    DEFAULT NOW()
 );
 
