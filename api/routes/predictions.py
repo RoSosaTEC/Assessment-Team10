@@ -3,7 +3,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
 from auth_utils import token_required
-from db.queries import get_user_predictions, log_prediction
+from db.queries import get_prediction_by_id, get_user_predictions, log_prediction
 from ml.prediction_service import (
     extract_article_text_from_url,
     isot_model,
@@ -13,15 +13,32 @@ from ml.prediction_service import (
     predict_text,
 )
 
+from db.queries import (
+    get_user_predictions,
+    get_prediction_by_id,
+    log_prediction,
+)
+
+@predictions_bp.route("/history/<int:prediction_id>", methods=["GET"])
+@token_required
+def history_item(prediction_id):
+    user_id = request.user.get("user_id")
+
+    dashboard = get_prediction_by_id(user_id, prediction_id)
+
+    if dashboard is None:
+        return jsonify({"error": "Prediction not found"}), 404
+
+    return jsonify(dashboard)
 
 predictions_bp = Blueprint("predictions", __name__)
 
 
-def _safe_log_prediction(user_id, input_text, verdict, confidence, top_words):
+def _safe_log_prediction(user_id, input_text, dashboard):
     if not user_id:
         return None
     try:
-        return log_prediction(user_id, input_text, verdict, confidence, top_words)
+        return log_prediction(user_id, input_text, dashboard)
     except Exception as exc:
         print(f"DB log error: {exc}")
         return None
@@ -48,7 +65,7 @@ def predict_article():
         groq_client=current_app.extensions.get("groq_client"),
         news_client=current_app.extensions.get("newsapi"),
     )
-    _safe_log_prediction(request.user.get("user_id"), text, response["verdict"], response["confidence"], response["top_words"])
+    _safe_log_prediction(request.user.get("user_id"), text, response)
     return jsonify(response)
 
 
@@ -88,7 +105,7 @@ def predict_url():
         groq_client=current_app.extensions.get("groq_client"),
         news_client=current_app.extensions.get("newsapi"),
     )
-    _safe_log_prediction(request.user.get("user_id"), text, response["verdict"], response["confidence"], response["top_words"])
+    _safe_log_prediction(request.user.get("user_id"), text, response)
     return jsonify(response)
 
 
@@ -111,7 +128,7 @@ def predict_quote():
         labels={0: "MISLEADING", 1: "CREDIBLE"},
         include_analysis=False,
     )
-    _safe_log_prediction(request.user.get("user_id"), text, response["verdict"], response["confidence"], response["top_words"])
+    _safe_log_prediction(request.user.get("user_id"), text, response)
     return jsonify(response)
 
 
