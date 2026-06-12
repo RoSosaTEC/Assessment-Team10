@@ -1,0 +1,37 @@
+VerifyAI architecture split summary
+
+Before:
+- The backend was mostly concentrated in api/app.py.
+- api/db.py mixed connection pooling, schema creation, and CRUD query helpers.
+- api/prediction_service.py mixed model loading, article analysis, title generation, URL extraction, and prediction orchestration.
+- Flask startup, database bootstrapping, auth, and prediction logic were all tightly coupled.
+
+After:
+- db/ is now a root-level package for persistence.
+  - db/connection.py handles PostgreSQL pooling.
+  - db/schema.py owns schema creation and migration steps.
+  - db/queries.py contains CRUD and history helpers.
+  - db/bootstrap.py initializes the DB layer.
+- ml/ is now a root-level package for machine-learning and enrichment logic.
+  - ml/models.py loads the trained models and vectorizers.
+  - ml/analysis.py handles text normalization and article analysis.
+  - ml/enrichment.py handles title generation, NewsAPI helpers, citation building, and URL extraction.
+  - ml/pipeline.py orchestrates prediction responses.
+  - ml/prediction_service.py remains as a compatibility facade so older imports still work.
+- api/ now focuses on HTTP behavior only.
+  - api/factory.py creates the Flask app and registers blueprints.
+  - api/routes/auth.py handles register/login/logout.
+  - api/routes/predictions.py handles article, URL, quote, and history endpoints.
+  - api/auth_utils.py handles token validation.
+  - api/app.py is a thin entrypoint.
+
+Why this is better:
+- Smaller files with single responsibilities are easier to test and maintain.
+- Database code is isolated from HTTP code, which reduces accidental exposure of persistence logic.
+- ML code is separated from routing, which makes model changes safer and easier to reuse.
+- The app is more deployment-friendly because root-level db/ and ml/ packages can be reused without depending on a monolithic api module.
+
+Behavioral notes:
+- The login form should use app user accounts, not the PostgreSQL role.
+- Existing databases are migrated on startup so older schemas gain missing columns like token_version automatically.
+- The route import surface stays stable because ml/prediction_service.py re-exports the previous symbols.
