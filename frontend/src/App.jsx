@@ -931,6 +931,8 @@ export default function App() {
   const [selectedHistory, setSelectedHistory] = useState(null);
   const [historyError, setHistoryError] = useState(null);
 
+  const [profile, setProfile] = useState(null);
+
   const [lang, setLangState] = useState("en");
   const [cbMode, setCbModeState] = useState("none");
   const [dyslexic, setDyslexic] = useState(false);
@@ -1019,6 +1021,25 @@ export default function App() {
       setLoading(false);
     }
   };
+
+  const loadProfile = async () => {
+  setView("profile");
+
+  try {
+    const res = await fetch(`${API_BASE}/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to load profile");
+
+    setProfile(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const loadHistory = async () => {
   setView("history");
@@ -1119,7 +1140,7 @@ const loadHistoryItem = async (id) => {
           <DarkModeToggle dark={dark} onToggle={toggleDark} />
           <UserMenu
             username={username}
-            onProfile={() => setView("profile")}
+            onProfile={loadProfile}
             onHistory={loadHistory}
             onLogout={logout}
           />
@@ -1142,7 +1163,20 @@ const loadHistoryItem = async (id) => {
   <main className="profile-page">
     <div className="input-card">
       <h2>Profile</h2>
-      <p>Account details and password management can go here.</p>
+      <div className="profile-card">
+      <div className="profile-avatar">
+        {username?.charAt(0).toUpperCase()}
+      </div>
+
+      <div>
+        <div className="profile-label">Username</div>
+        <div className="profile-value">{username}</div>
+
+        <div className="profile-label" style={{ marginTop: 14 }}>Email</div>
+        <div className="profile-value">{profile?.email || "Loading..."}</div>
+
+      </div>
+    </div>
     </div>
   </main>
 )}
@@ -1506,6 +1540,59 @@ function Styles() {
         --ink: #fff; --ink2: #eee; --ink3: #bbb;
         --card: #000; --card2: #111; --page: #000;
         --acc: #B0A0FF; --acc2: #9080F0; --acc-light: #1A1640; --acc-border: #5040B0;
+      }
+
+      .profile-card {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-top: 20px;
+      background: var(--card2);
+      border: 1px solid var(--acc-border);
+      border-radius: var(--r);
+      padding: 20px;
+      }
+
+      .profile-avatar {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--acc), var(--acc2));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 24px;
+      }
+
+      .profile-label {
+        font-size: 12px;
+        color: var(--ink3);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 700;
+      }
+
+      .profile-value {
+        font-size: 18px;
+        color: var(--ink);
+        font-weight: 700;
+        margin-top: 4px;
+      }
+
+      .a11y-panel {
+      margin-bottom: 24px;
+      }
+
+      .profile-page .input-card {
+      max-width: 700px;
+      margin: 0 auto;
+      }
+
+      .profile-page h2 {
+      margin-left: 20px;
+      margin-top: 12px;
       }
 
       .history-empty {

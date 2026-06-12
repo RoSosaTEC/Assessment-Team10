@@ -7,11 +7,24 @@ import jwt
 from flask import Blueprint, current_app, jsonify, request
 
 from auth_utils import token_required
-from db.queries import create_user, get_user_by_email, get_user_by_username, increment_user_token_version
-
+from db.queries import create_user, get_user_by_email, get_user_by_id, get_user_by_username, increment_user_token_version
+from db.queries import create_user, get_user_by_email, get_user_by_username, get_user_by_id, increment_user_token_version
 
 auth_bp = Blueprint("auth", __name__)
 
+@auth_bp.route("/me", methods=["GET"])
+@token_required
+def me():
+    user = get_user_by_id(request.user["user_id"])
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify({
+        "id": user["id"],
+        "username": user["username"],
+        "email": user["email"],
+    })
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
