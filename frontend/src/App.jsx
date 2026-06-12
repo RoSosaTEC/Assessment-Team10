@@ -881,14 +881,14 @@ function OutputPlaceholder({ t }) {
   );
 }
 
-function UserMenu({ onProfile, onHistory, onLogout }) {
+function UserMenu({ username, onProfile, onHistory, onLogout }) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="user-menu">
       <button className="user-menu-btn" onClick={() => setOpen(o => !o)}>
         <Icon name="user" size={18} />
-        Account
+        {username}
         <Icon name="chevronDown" size={16} />
       </button>
 
@@ -904,6 +904,17 @@ function UserMenu({ onProfile, onHistory, onLogout }) {
 }
 
 // ── Main App ──────────────────────────────────────────────────────────────────
+
+function getUsernameFromToken(token) {
+  if (!token) return "Account";
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.username || "Account";
+  } catch {
+    return "Account";
+  }
+}
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || null);
@@ -942,6 +953,7 @@ export default function App() {
 
   const textareaRef = useRef(null);
   const t = TRANSLATIONS[lang];
+  const username = getUsernameFromToken(token);
 
   useHeadLinks();
   useDyslexicFontFace();
@@ -1010,6 +1022,7 @@ export default function App() {
 
   const loadHistory = async () => {
   setView("history");
+  setSelectedHistory(null);
   setHistoryLoading(true);
   setHistoryError(null);
 
@@ -1105,6 +1118,7 @@ const loadHistoryItem = async (id) => {
         <div className="topbar-actions">
           <DarkModeToggle dark={dark} onToggle={toggleDark} />
           <UserMenu
+            username={username}
             onProfile={() => setView("profile")}
             onHistory={loadHistory}
             onLogout={logout}
@@ -1159,7 +1173,12 @@ const loadHistoryItem = async (id) => {
     </section>
 
     <section className="history-dashboard">
-      {!selectedHistory && <OutputPlaceholder t={t} />}
+      {!selectedHistory && (
+        <div className="history-empty">
+          <h3>Select an analysis</h3>
+          <p>Choose a saved article from your history to view its dashboard.</p>
+        </div>
+      )}
 
       {selectedHistory && (
         <>
@@ -1487,6 +1506,112 @@ function Styles() {
         --ink: #fff; --ink2: #eee; --ink3: #bbb;
         --card: #000; --card2: #111; --page: #000;
         --acc: #B0A0FF; --acc2: #9080F0; --acc-light: #1A1640; --acc-border: #5040B0;
+      }
+
+      .history-empty {
+      background: var(--card);
+      border: 1px dashed var(--acc-border);
+      border-radius: var(--r);
+      padding: 32px;
+      text-align: center;
+      color: var(--ink2);
+      }
+
+      .history-empty h3 {
+        color: var(--ink);
+        margin-bottom: 8px;
+      }
+      .user-menu {
+      position: relative;
+      }
+
+      .user-menu-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, var(--acc), var(--acc2));
+        color: white;
+        border: none;
+        border-radius: var(--rpill);
+        padding: 10px 16px;
+        font-family: var(--f);
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(74, 58, 181, 0.25);
+      }
+
+      .user-menu-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 26px rgba(74, 58, 181, 0.32);
+      }
+
+      .user-menu-dropdown {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 10px);
+        min-width: 190px;
+        background: var(--card);
+        border: 1px solid var(--acc-border);
+        border-radius: 14px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+        padding: 8px;
+        z-index: 50;
+      }
+
+      .user-menu-dropdown button {
+        width: 100%;
+        border: none;
+        background: transparent;
+        color: var(--ink);
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-family: var(--f);
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .user-menu-dropdown button:hover {
+        background: var(--acc-light);
+        color: var(--acc);
+      }
+
+      .history-item {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        text-align: left;
+        background: var(--card);
+        color: var(--ink);
+        border: 1px solid var(--acc-border);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(74, 58, 181, 0.08);
+      }
+
+      .history-item:hover {
+        transform: translateY(-1px);
+        border-color: var(--acc2);
+        background: var(--acc-light);
+      }
+
+      .history-item strong {
+        font-size: 15px;
+        line-height: 1.35;
+      }
+
+      .history-item span {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--acc);
+      }
+
+      .history-item small {
+        font-size: 12px;
+        color: var(--ink3);
       }
 
       .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
