@@ -145,35 +145,63 @@ def increment_user_token_version(user_id):
         release_conn(conn)
 
 
-def log_prediction(user_id, input_text, verdict, confidence, top_words):
+def log_prediction(user_id, input_text, dashboard):
+    verdict = dashboard["verdict"]
+    confidence = dashboard["confidence"]
+    generated_title = dashboard.get("generated_title")
+
     conn = get_conn()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO predictions (user_id, input_text, verdict, confidence, top_words)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO predictions (
+                    user_id,
+                    input_text,
+                    generated_title,
+                    verdict,
+                    confidence,
+                    dashboard
+                )
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
-                (user_id, input_text[:2000], verdict, confidence, json.dumps(top_words or [])),
+                (
+                    user_id,
+                    input_text[:2000],
+                    generated_title,
+                    verdict,
+                    confidence,
+                    json.dumps(dashboard),
+                ),
             )
+
             prediction_id = cur.fetchone()[0]
+
         conn.commit()
         return prediction_id
+
     except Exception:
         conn.rollback()
         raise
+
     finally:
         release_conn(conn)
 
 
 def get_user_predictions(user_id, limit=50, offset=0):
     conn = get_conn()
+
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT id, input_text, verdict, confidence, top_words, created_at
+                SELECT
+                    id,
+                    generated_title,
+                    verdict,
+                    confidence,
+                    created_at
                 FROM predictions
                 WHERE user_id = %s
                 ORDER BY created_at DESC, id DESC
@@ -181,18 +209,48 @@ def get_user_predictions(user_id, limit=50, offset=0):
                 """,
                 (user_id, limit, offset),
             )
+
             rows = cur.fetchall()
+
             return [
                 {
                     "id": row[0],
-                    "input_text": (row[1] or "")[:300],
+                    "title": row[1] or "Untitled prediction",
                     "verdict": row[2],
                     "confidence": row[3],
-                    "top_words": _json_value(row[4]),
-                    "created_at": _format_timestamp(row[5]),
+                    "created_at": _format_timestamp(row[4]),
                 }
                 for row in rows
             ]
+
+    finally:
+        release_conn(conn)
+
+def get_prediction_by_id(user_id, prediction_id):
+    conn = get_conn()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT input_text, dashboard
+                FROM predictions
+                WHERE id = %s
+                AND user_id = %s
+                """,
+                (prediction_id, user_id),
+            )
+
+            row = cur.fetchone()
+
+            if not row:
+                return None
+
+            dashboard = _json_value(row[1])
+            dashboard["input_text"] = row[0]
+
+            return dashboard
+
     finally:
         release_conn(conn)
 

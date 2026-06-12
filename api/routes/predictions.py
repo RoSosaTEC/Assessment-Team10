@@ -13,26 +13,7 @@ from ml.prediction_service import (
     predict_text,
 )
 
-from db.queries import (
-    get_user_predictions,
-    get_prediction_by_id,
-    log_prediction,
-)
-
-@predictions_bp.route("/history/<int:prediction_id>", methods=["GET"])
-@token_required
-def history_item(prediction_id):
-    user_id = request.user.get("user_id")
-
-    dashboard = get_prediction_by_id(user_id, prediction_id)
-
-    if dashboard is None:
-        return jsonify({"error": "Prediction not found"}), 404
-
-    return jsonify(dashboard)
-
 predictions_bp = Blueprint("predictions", __name__)
-
 
 def _safe_log_prediction(user_id, input_text, dashboard):
     if not user_id:
@@ -144,3 +125,15 @@ def history():
         return jsonify({"history": rows, "limit": limit, "offset": offset})
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+@predictions_bp.route("/history/<int:prediction_id>", methods=["GET"])
+@token_required
+def history_item(prediction_id):
+    user_id = request.user.get("user_id")
+
+    dashboard = get_prediction_by_id(user_id, prediction_id)
+
+    if dashboard is None:
+        return jsonify({"error": "Prediction not found"}), 404
+
+    return jsonify(dashboard)
