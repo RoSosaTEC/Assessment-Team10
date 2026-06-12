@@ -932,8 +932,22 @@ export default function App() {
   }, [dyslexic]);
 
   const handleLogin = (newToken) => setToken(newToken);
-  const logout = () => { localStorage.removeItem("token"); setToken(null); setAuthMode("login"); };
+  const logout = async () => {
+  try {
+    await fetch(`${API_BASE}/logout`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  } catch (err) {
+    console.error("Logout failed:", err);
+  }
 
+  localStorage.removeItem("token");
+  setToken(null);
+  setAuthMode("login");
+};
   const setLang = useCallback((l) => { setLangState(l); document.documentElement.lang = l; }, []);
   const setCbMode = useCallback((mode) => { setCbModeState(mode); document.body.style.filter = CB_FILTERS[mode] || "none"; }, []);
   const toggleDyslexic = useCallback(() => setDyslexic(d => !d), []);
