@@ -405,9 +405,14 @@ def token_required(f):
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:
-            return jsonify({"error": "Token is missing!"}), 401
+            return jsonify({"error": "Token is missing"}), 401
         try:
-            token = auth_header.split(" ")[1]
+            token = auth_header.split()
+
+            if len(token) != 2 or token[0].lower() != "bearer":
+                return jsonify({"error": "Invalid token format"}), 401
+
+            token = token[1]
 
             payload = jwt.decode(
                 token,
@@ -415,10 +420,27 @@ def token_required(f):
                 algorithms=["HS256"]
             ) 
 
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT token_version FROM users WHERE id = %s",
+                (payload["user_id"],)
+            )
+            result = cursor.fetchone()
+            cursor.close()
+            conn.close()
+
+            if not result:
+                return jsonify({"error": "User not found"}), 401
+
+            if payload.get("token_version", 0) != result["token_version"]:
+                return jsonify({"error": "Token has been revoked"}), 401
+
             request.user = payload
         
-        except Exception:
-            return jsonify({"error": "Token is invalid!"}), 401
+        except Exception as e:
+            print("AUTH ERROR:", e)
+            return jsonify({"error": "Invalid token"}), 401
         
         return f(*args, **kwargs)
     return decorated
@@ -617,14 +639,20 @@ def register():
 def login():
     data = request.get_json()
 
+    if not data:
+        return jsonify({"error": "Request body must be JSON."}), 400
+
     username = data["username"]
     password = data["password"]
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required."}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-    "SELECT id, username, password_hash FROM users WHERE username = %s",
+    "SELECT id, username, password_hash, token_version FROM users WHERE username = %s",
     (username,)
 )
 
@@ -644,12 +672,43 @@ def login():
         {
             "user_id": user["id"],
             "username": user["username"],
-            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)        },
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1),
+            "token_version": user["token_version"],
+        },
         JWT_SECRET,
-        algorithm="HS256"
+        algorithm="HS256", 
     )
 
     return jsonify({"token": token})
+
+@app.route("/logout", methods=["POST"])
+@token_required
+def logout():
+
+    user_id = request.user["user_id"]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            """
+            UPDATE users
+            SET token_version = token_version + 1
+            WHERE id = %s
+            """,
+            (user_id,)
+        )
+
+        conn.commit()
+
+        return jsonify({
+            "message": "Logged out"
+        })
+
+    finally:
+        cursor.close()
+        conn.close()
 
 # ── Run ───────────────────────────────────────────────────────────────────────
         
