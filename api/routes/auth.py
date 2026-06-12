@@ -49,14 +49,9 @@ def register():
         }), 201
 
     except Exception as e:
-        conn.rollback()
         return jsonify({
             "error": str(e)
         }), 500
-
-    finally:
-        cursor.close()
-        release_conn(conn)
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
@@ -120,7 +115,5 @@ def history():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-        
-    finally:
-        cursor.close()
-        release_conn(conn)
+
+    
