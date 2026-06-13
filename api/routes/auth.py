@@ -53,7 +53,7 @@ def register():
 
         logging.info(
             f"El usuario {username} con id {user_id} creo una cuenta de forma exitosa"
-        )
+        ) 
 
         return jsonify({
             "message": "User registered successfully.",
