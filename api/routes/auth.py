@@ -1,5 +1,12 @@
 from flask import (Blueprint, jsonify, request,)
 import bcrypt
+import logging
+
+logging.basicConfig(
+    filename='/var/log/flask/app.log',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s'
+)
 
 from auth.decorators import (token_required)
 from auth.jwt_handler import (generate_token)
@@ -20,6 +27,7 @@ def register():
         return jsonify({
             "error": "Username, email, and password are required."
         }), 400
+    
 
     try:
         if username_exists(username):
@@ -43,12 +51,19 @@ def register():
             password_hash
         )
 
+        logging.info(
+            f"El usuario {username} con id {user_id} creo una cuenta de forma exitosa"
+        )
+
         return jsonify({
             "message": "User registered successfully.",
             "user_id": user_id
         }), 201
 
     except Exception as e:
+        logging.error(
+            f"Error: {str(e)}"
+        )
         return jsonify({
             "error": str(e)
         }), 500
@@ -80,11 +95,18 @@ def login():
 
     token = generate_token(user)
 
+    logging.info(
+            f"El usuario {username} inicio sesion"
+        )
+
     return jsonify({"token": token})
 
 @auth_bp.route("/logout", methods=["POST"])
 @token_required
 def logout():
+    logging.info(
+            f"El usuario {user_id} termino sesion"
+        )
     user_id = request.user["user_id"]
     increment_token_version(
         request.user["user_id"]
@@ -114,6 +136,9 @@ def history():
             "offset": offset,
         })
     except Exception as e:
+        logging.error(
+            f"Error {str(e)}"
+        )
         return jsonify({"error": str(e)}), 500
 
     
